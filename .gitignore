@@ -1,0 +1,22 @@
+# Android build output and machine-specific configuration
+**/.gradle/
+**/.kotlin/
+**/build/
+**/local.properties
+**/.idea/
+*.iml
+*.apk
+*.aab
+*.jks
+*.keystore
+.env
+.env.*
+
+# Local phone captures and recovery inventories
+/life-rpg-*.png
+**/design/redesign/*.png
+**/design/redesign/*.xml
+**/design/icons/on-device.png
+**/design/icons/colorful-on-device.png
+**/design/icons/recovery.png
+**/design/icons/recovery-files.txt

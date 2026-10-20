@@ -1,0 +1,191 @@
+{
+  "tool": "built-in image_gen",
+  "style": "Create ONE colorful PNG mobile app icon for Life RPG: SUBJECT. Premium playful soft 3D clay illustration, rounded chunky sculpted forms, clear simple silhouette, subtle warm upper-left highlights and soft object shading, cobalt blue, teal, coral, ivory and warm gold palette. Square centered composition, object fills about 80% of canvas with generous transparent margin. Transparent background, no background tile or circle, no scenery, no text, no lettering, no borders, no exterior cast shadow. Readable at 24–48px. Match a cohesive polished game UI icon family.",
+  "icons": [
+    [
+      "study",
+      "an open study book with ivory pages, cobalt blue cover, small golden star"
+    ],
+    [
+      "home",
+      "a cozy ivory cottage with a coral roof, teal door and tiny gold sparkle"
+    ],
+    [
+      "today",
+      "a chunky golden lightning bolt with a coral side edge"
+    ],
+    [
+      "medicine",
+      "an ivory first aid case with a coral medical cross, teal handle and blue clasp"
+    ],
+    [
+      "fitness",
+      "a compact cobalt dumbbell with teal weights and gold collar rings"
+    ],
+    [
+      "social",
+      "two friendly rounded human busts, one teal and one coral, with a small golden chat bubble"
+    ],
+    [
+      "sleep",
+      "a golden crescent moon with a tiny blue cloud and two stars"
+    ],
+    [
+      "hobbies",
+      "an ivory artist palette with coral, blue, teal and gold paint daubs and one blue brush"
+    ],
+    [
+      "finance",
+      "a teal wallet with a cobalt clasp and two gold coins"
+    ],
+    [
+      "todo",
+      "an ivory clipboard with a cobalt clip and three teal checkmarks, coral corner tab, no writing"
+    ],
+    [
+      "care",
+      "a teal pump soap bottle with an ivory label, a coral heart and one blue bubble"
+    ],
+    [
+      "milestone",
+      "a coral flag on a cobalt pole planted on a small gold summit"
+    ],
+    [
+      "achievement",
+      "a golden trophy cup with teal handles and cobalt base"
+    ],
+    [
+      "logs",
+      "a cobalt journal with ivory page edges, teal bookmark and small gold clock emblem"
+    ],
+    [
+      "sync",
+      "an ivory cloud surrounded by two chunky curved arrows, cobalt and teal"
+    ],
+    [
+      "menu",
+      "three stacked rounded horizontal capsules, cobalt, teal and coral"
+    ],
+    [
+      "edit",
+      "a golden pencil with coral eraser and cobalt grip angled diagonally"
+    ],
+    [
+      "add",
+      "a chunky rounded teal plus sign with a cobalt side edge"
+    ],
+    [
+      "delete",
+      "a coral trash bin with ivory lid and cobalt handle"
+    ],
+    [
+      "check",
+      "a chunky teal checkmark with a cobalt side edge"
+    ],
+    [
+      "lock",
+      "a gold padlock with silver ivory shackle and cobalt keyhole"
+    ],
+    [
+      "left",
+      "a chunky cobalt chevron pointing LEFT with teal side edge"
+    ],
+    [
+      "right",
+      "a chunky cobalt chevron pointing RIGHT with teal side edge"
+    ],
+    [
+      "up",
+      "a chunky cobalt chevron pointing UP with teal side edge"
+    ],
+    [
+      "down",
+      "a chunky cobalt chevron pointing DOWN with teal side edge"
+    ],
+    [
+      "back",
+      "a chunky cobalt horizontal arrow pointing LEFT with teal side edge"
+    ],
+    [
+      "forward",
+      "a chunky cobalt horizontal arrow pointing RIGHT with teal side edge"
+    ],
+    [
+      "upload",
+      "an ivory cloud with a chunky teal arrow pointing UP"
+    ],
+    [
+      "download",
+      "an ivory cloud with a chunky cobalt arrow pointing DOWN"
+    ],
+    [
+      "logout",
+      "a teal doorway with a coral arrow pointing right out through it"
+    ],
+    [
+      "shower",
+      "a silver ivory shower head with cobalt handle spraying three teal water droplets"
+    ],
+    [
+      "haircut",
+      "a pair of silver ivory scissors with coral and teal finger loops"
+    ],
+    [
+      "shaving",
+      "a cobalt safety razor with silver ivory blade head and teal handle"
+    ],
+    [
+      "manscaping",
+      "a teal electric grooming trimmer with silver ivory teeth and coral power button"
+    ],
+    [
+      "nails",
+      "a silver ivory nail clipper with cobalt lever and teal grip"
+    ],
+    [
+      "xp",
+      "a chunky gold five-point star with coral side edge"
+    ],
+    [
+      "streak",
+      "a bright coral flame with a smaller golden flame inside"
+    ],
+    [
+      "week",
+      "an ivory calendar with cobalt header, teal binding rings and a coral checkmark, no writing or numerals"
+    ],
+    [
+      "badge_initiate",
+      "a small cobalt shield medal with a polished silver ivory rim and a teal round gem at center"
+    ],
+    [
+      "badge_seeker",
+      "a teal shield medal with a gold rim and a small ivory compass needle emblem"
+    ],
+    [
+      "badge_builder",
+      "a cobalt shield medal with a gold rim and three ivory building blocks emblem"
+    ],
+    [
+      "badge_keeper",
+      "a coral shield medal with a gold rim and a gold lightning bolt emblem"
+    ],
+    [
+      "badge_routine",
+      "a teal shield medal with a silver ivory rim and a gold clock emblem without numerals"
+    ],
+    [
+      "badge_iron",
+      "a steel blue shield medal with a silver ivory rim and a small gold dumbbell emblem"
+    ],
+    [
+      "badge_achiever",
+      "a coral shield medal with a gold rim and a chunky ivory checkmark emblem"
+    ],
+    [
+      "badge_legend",
+      "a royal cobalt shield medal with a gold rim and a gold three-point crown with teal jewels"
+    ]
+  ],
+  "menu_revision": "Exactly three short parallel horizontal rounded bars stacked vertically, equal spacing: cobalt, teal, coral, gold edge highlights. Simple chunky clay capsules. Front view, no books, spines, decorations, lettering, or other objects. Transparent background."
+}
