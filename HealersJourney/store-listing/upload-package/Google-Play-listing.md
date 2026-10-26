@@ -51,7 +51,7 @@ Welcome to Life RPG. Turn activities in five areas of life into quests, earn XP 
 ## Play Console setup
 
 - Public support email: `nayanby@gmail.com`.
-- Privacy policy: https://github.com/nayanby/Healers-journey/blob/main/PRIVACY.md
+- Privacy policy: https://github.com/nayanby/life-rpg-android/blob/main/PRIVACY.md
 - Target audience: ages 13 and over.
 - Content rating: IARC questionnaire completed; PEGI 3 and ESRB Everyone.
 - Data safety: no app collection or sharing declared for this release.

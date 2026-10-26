@@ -206,7 +206,7 @@ fun DataScreen(snapshot: GameSnapshot, viewModel: GameViewModel, drive: DriveUiS
             OutlinedButton(
                 onClick = {
                     context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/nayanby/Healers-journey/blob/main/PRIVACY.md"))
+                        Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/nayanby/life-rpg-android/blob/main/PRIVACY.md"))
                     )
                 },
                 modifier = Modifier.fillMaxWidth()
