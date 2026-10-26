@@ -10,7 +10,13 @@ Life RPG uses Google Play Games Services for player sign-in. Google Play service
 
 If you choose to export your data, the destination you select controls that copy. Android's device backup or transfer features may also copy app data according to your device and Google account settings. Those services are governed by their own privacy terms.
 
-You can delete data stored on your device by clearing Life RPG's storage or uninstalling the app. Copies you exported or backed up may need to be deleted separately from their destination.
+## Deleting your data
+
+To erase Life RPG's local activities, care records, financial records, milestones, character choices, and progress, open Journal → Settings → Danger zone → Reset all game data. You can also clear the app's storage or uninstall it. Life RPG does not keep a server copy of these records or impose a separate retention period. Delete any exported or backed-up copies from the locations where you saved them.
+
+To remove Life RPG data held by Google Play Games, visit your [Play Games profile](https://play.google.com/games/profile), open Your Data, and choose Delete Play Games Account & Data. Find Life RPG in the individual-game section and select its deletion option. Google's [deletion guide](https://support.google.com/googleplay/answer/9130646) explains this process and the separate controls for Google Web & App Activity. Google controls retention of its service diagnostics under its own privacy policies; Life RPG cannot delete Google's diagnostic records directly.
+
+For help finding the right deletion controls, email **nayanby@gmail.com**. We do not require you to create a separate Life RPG online account to request help.
 
 We will update this policy before enabling any new online data features.
 
