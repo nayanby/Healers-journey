@@ -1,0 +1,97 @@
+package com.healersjourney.app.ui.components
+
+import android.graphics.BitmapFactory
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.platform.LocalContext
+import com.healersjourney.app.R
+
+/** Decode artwork at a sensible texture size; typography keeps normal rendering. */
+@Composable
+fun gameArtPainter(id: Int): BitmapPainter {
+    val resources = LocalContext.current.resources
+    val bitmap = remember(resources, id) {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeResource(resources, id, bounds)
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 512) sample *= 2
+        BitmapFactory.decodeResource(resources, id, BitmapFactory.Options().apply {
+            inSampleSize = sample
+            inScaled = false
+        }).asImageBitmap()
+    }
+    return remember(bitmap) { BitmapPainter(bitmap, filterQuality = FilterQuality.None) }
+}
+
+object GameArt {
+    fun avatar(id: String?): Int = when(id) {
+        "traveler" -> R.drawable.gameart_avatar_traveler
+        "forest_cloak" -> R.drawable.gameart_avatar_forest_cloak
+        "cozy_knit" -> R.drawable.gameart_avatar_cozy_knit
+        "ocean_explorer" -> R.drawable.gameart_avatar_ocean_explorer
+        "sun_cape" -> R.drawable.gameart_avatar_sun_cape
+        "ranger" -> R.drawable.gameart_avatar_ranger
+        "winter_coat" -> R.drawable.gameart_avatar_winter_coat
+        "royal_cape" -> R.drawable.gameart_avatar_royal_cape
+        "starlight_robes" -> R.drawable.gameart_avatar_starlight_robes
+        "golden_knight" -> R.drawable.gameart_avatar_golden_knight
+        else -> R.drawable.gameart_avatar_traveler
+    }
+
+    fun companion(id: String?): Int = when(id) {
+        "firefly" -> R.drawable.gameart_companion_firefly
+        "sprite" -> R.drawable.gameart_companion_sprite
+        "star" -> R.drawable.gameart_companion_star
+        "fox" -> R.drawable.gameart_companion_fox
+        "bunny" -> R.drawable.gameart_companion_bunny
+        "cat" -> R.drawable.gameart_companion_cat
+        "owl" -> R.drawable.gameart_companion_owl
+        "cloud" -> R.drawable.gameart_companion_cloud
+        "dragon" -> R.drawable.gameart_companion_dragon
+        else -> R.drawable.gameart_companion_firefly
+    }
+
+    fun decor(id: String?): Int = when(id) {
+        "flowers" -> R.drawable.gameart_decor_flowers
+        "lanterns" -> R.drawable.gameart_decor_lanterns
+        "bookshelf" -> R.drawable.gameart_decor_bookshelf
+        "rug" -> R.drawable.gameart_decor_rug
+        "plants" -> R.drawable.gameart_decor_plants
+        "aquarium" -> R.drawable.gameart_decor_aquarium
+        "telescope" -> R.drawable.gameart_decor_telescope
+        "fireplace" -> R.drawable.gameart_decor_fireplace
+        "trophy" -> R.drawable.gameart_decor_trophy
+        else -> R.drawable.gameart_decor_flowers
+    }
+
+    fun scene(id: String?): Int = when(id) {
+        "meadow" -> R.drawable.gameart_scene_meadow
+        "sunset" -> R.drawable.gameart_scene_sunset
+        "moonlight" -> R.drawable.gameart_scene_moonlight
+        "forest" -> R.drawable.gameart_scene_forest
+        "beach" -> R.drawable.gameart_scene_beach
+        "snow" -> R.drawable.gameart_scene_snow
+        "aurora" -> R.drawable.gameart_scene_aurora
+        "sky_islands" -> R.drawable.gameart_scene_sky_islands
+        else -> R.drawable.gameart_scene_meadow
+    }
+
+    fun item(slot: String, id: String): Int = when(slot) {
+        "outfit" -> avatar(id)
+        "decor" -> if(id == "plain") room else decor(id)
+        "companion" -> companion(id)
+        else -> scene(id)
+    }
+
+    val room = R.drawable.gameart_room_cozy
+    fun place(skill: String): Int = when(skill) {
+        "medicineXp" -> R.drawable.gameart_place_workshop
+        "strengthXp" -> R.drawable.gameart_place_fitness
+        "socialXp" -> R.drawable.gameart_place_social
+        "hobbiesXp" -> R.drawable.gameart_place_creativity
+        else -> R.drawable.gameart_place_library
+    }
+}

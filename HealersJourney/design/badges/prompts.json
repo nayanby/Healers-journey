@@ -1,0 +1,89 @@
+{
+  "style": "Use case: stylized-concept. Create ONE isolated transparent PNG collectible rank badge for Life RPG. Premium friendly glossy 3D casual mobile RPG icon, rounded chunky sculpted forms, soft upper-left studio light, smooth resin and metal materials, bold silhouette readable at 48px. Front-facing, bilateral symmetry, centered square canvas. Entire object visible. Real transparent alpha background; no background tile or scenery. No text, numerals, letters, watermark, banners or ground shadows. This is part of a strictly ascending 8-tier rank family: wood -> copper -> blue silver -> amber gold sun -> emerald laurel -> crimson silver wings -> purple crowned gold wings -> celestial diamond double wings. Each tier adds clear physical structure and increases footprint. NOT eight reskins of same ornate shield. ",
+  "tiers": [
+    [
+      "initiate",
+      1,
+      "TIER 1 of 8. A very humble SMALL rough wooden buckler, plain circular shape with a tiny bronze central stud. Bare wood, matte, no gold, no gem, no silver, no ornament, no crown or wings. Almost a training shield. Only occupies 48 percent of canvas width and 52 percent height; lots of transparent margin. It must look unmistakably like the weakest beginner item."
+    ],
+    [
+      "seeker",
+      5,
+      "TIER 2 of 8. A simple copper pointed heater shield with dark brown leather center, a broad plain copper rim and TWO chunky copper upward chevrons. No gemstones, no gold, no silver, no wings, no crown, no laurels. Occupies 56 percent canvas width and 60 percent height. Clear upgrade from a small round wooden starter buckler, still humble."
+    ],
+    [
+      "builder",
+      10,
+      "TIER 3 of 8. A sturdy polished SILVER steel pointed shield, deep BLUE enamel center, THREE bold stacked silver chevrons and a small sapphire stud. Two short angular silver shoulder tips integrated into upper corners. No gold, no wings, no crown, no leaves, no ornate filigree. Occupies 64 percent canvas width and 66 percent height. Strong angular silhouette clearly upgraded from plain copper."
+    ],
+    [
+      "keeper",
+      20,
+      "TIER 4 of 8. A GOLD shield with vivid orange amber center, one LARGE ruby diamond gem and an unmistakable chunky eight-point GOLD SUNBURST backing plate extending beyond shield. Broad bold rays, very simple surfaces, readable icon. No wings, no crown, no laurel. Occupies 72 percent width and height. Clear golden sun-shaped upgrade over an ordinary silver shield."
+    ],
+    [
+      "routine",
+      30,
+      "TIER 5 of 8. A rich EMERALD green and gold shield with large emerald jewel, a FULL chunky gold LAUREL WREATH encircling its sides and rising high above both shoulders, small gold star at top, gold sunburst backing visible behind wreath. No feather wings, no crown. Occupies 80 percent width and 78 percent height. Round majestic wreath silhouette vastly broader than earlier shield. Use large clean sculpted leaves, no tiny details."
+    ],
+    [
+      "iron",
+      50,
+      "TIER 6 of 8. A heroic CRIMSON red and platinum-gold shield with huge red ruby gemstone, two enormous swept-up SILVER FEATHER WINGS emerging left and right, gold laurel base and small gold star on top. No crown. Wings have 4-5 big bold feathers each, a very broad soaring silhouette. Occupies 90 percent width and 82 percent height. Must look clearly more powerful than a simple laurel shield. Large solid shapes, not fine filigree."
+    ],
+    [
+      "achiever",
+      75,
+      "TIER 7 of 8. A royal AMETHYST purple and gold shield, large luminous purple faceted gem, huge GOLD FEATHER WINGS lifted high on both sides, prominent FIVE-POINT GOLD CROWN on top with purple jewels, gold laurel below, THREE gold stars beneath crest. Crown must be big and immediately visible at tiny size. Occupies 92 percent width and 90 percent height. Magnificent crowned-winged silhouette distinctly stronger than uncrowned silver-wing red tier."
+    ],
+    [
+      "legend",
+      100,
+      "TIER 8 of 8, the unmistakable ultimate legendary upgrade. An enormous radiant DIAMOND and iridescent CYAN gold shield, oversized prismatic diamond core, massive DOUBLE-LAYER WINGS (outer gold feathers and inner crystalline cyan feathers), a towering diamond-encrusted GOLD CROWN, five large STAR POINTS forming a solid celestial halo backing above the crown, gold laurel and three floating diamond shards below. Occupies 94 percent width and 94 percent height with nothing clipped. Powerful unique celestial silhouette, much grander than ordinary purple crowned wings. Big readable parts, a premium ultimate-game-reward look, no excessive wispy glow."
+    ]
+  ],
+  "tool": "built-in image_gen",
+  "version": 2,
+  "sources": [
+    {
+      "name": "initiate",
+      "level": 1,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-e8c3976b-3a33-465e-b054-2f2913e9342a.png"
+    },
+    {
+      "name": "seeker",
+      "level": 5,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-0cc54cc2-bd8a-487a-86c8-47e43414ac00.png"
+    },
+    {
+      "name": "builder",
+      "level": 10,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-c1d80630-3d9b-48e0-b137-25ca28854b10.png"
+    },
+    {
+      "name": "keeper",
+      "level": 20,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-277fcd2c-9822-4217-b689-f41906172889.png"
+    },
+    {
+      "name": "routine",
+      "level": 30,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-0bc4f5c4-b93b-439a-bcc0-71550450f49e.png"
+    },
+    {
+      "name": "iron",
+      "level": 50,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-de76ba1d-2143-4a24-97fa-1fd6dbb7fdf4.png"
+    },
+    {
+      "name": "achiever",
+      "level": 75,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-b478fcad-da88-4a17-ae44-d1c5bbf07e20.png"
+    },
+    {
+      "name": "legend",
+      "level": 100,
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-373db5f4-ed53-44f0-8e74-b57f348ae69a.png"
+    }
+  ]
+}

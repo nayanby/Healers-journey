@@ -21,6 +21,7 @@ import com.healersjourney.app.domain.LogEntry
 import com.healersjourney.app.domain.Milestone
 import com.healersjourney.app.domain.RemovedActivity
 import com.healersjourney.app.domain.TodoTask
+import com.healersjourney.app.data.backup.StateJson
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -120,7 +121,8 @@ class GameRepository(private val dao: GameDao) {
             todoViewOffset = state.todoViewOffset,
             todoViewMode = state.todoViewMode,
             hobbiesJson = Json.stringListToJson(state.hobbies),
-            removedActivitiesJson = Json.removedActivitiesToJson(state.removedActivities)
+            removedActivitiesJson = Json.removedActivitiesToJson(state.removedActivities),
+            gameExtrasJson = StateJson.encodeLocalExtras(state).toString()
         )
 
         val actions = state.actionHistory.mapIndexed { i, a ->
@@ -270,6 +272,7 @@ class GameRepository(private val dao: GameDao) {
             state.todoHistory[date] = rows.sortedBy { it.position }.map { todoFromEntity(it) }.toMutableList()
         }
 
+        StateJson.restoreLocalExtras(state, profile.gameExtrasJson)
         return state
     }
 

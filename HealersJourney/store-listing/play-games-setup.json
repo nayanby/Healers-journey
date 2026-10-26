@@ -1,0 +1,18 @@
+{
+  "applicationId": "com.life.rpg",
+  "cloudProjectId": "life-rpg-512821",
+  "gamesProjectId": "190621045314",
+  "googlePlayClientId": "190621045314-gk38e57ouqltvrttrms3sbuqkms23i4b.apps.googleusercontent.com",
+  "googlePlaySha1": "98:E5:6A:F3:7D:C4:EA:67:2F:75:73:51:C4:37:F5:C5:7C:0A:5E:EB",
+  "localTestingClientId": "190621045314-ktkre3otd8vg2ggpi6671i3666gljqp2.apps.googleusercontent.com",
+  "localTestingSha1": "5B:95:53:01:44:DA:74:CC:56:EB:2D:C7:FB:A6:72:6F:D2:3A:FC:C6",
+  "oauthAudience": "External",
+  "oauthPublishingStatus": "Testing",
+  "oauthTestUsers": ["nayanby@gmail.com"],
+  "gamesTestTracks": ["alpha"],
+  "gamesPublished": false,
+  "appSdkIntegrated": true,
+  "sdkVersion": "22.1.0",
+  "debugSignInVerified": true,
+  "verifiedOn": "2026-10-27"
+}

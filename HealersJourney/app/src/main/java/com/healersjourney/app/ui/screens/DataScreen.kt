@@ -1,6 +1,8 @@
 package com.healersjourney.app.ui.screens
 
+import androidx.compose.foundation.shape.CircleShape
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +28,7 @@ import com.healersjourney.app.ui.components.AppIcon as Icon
 import androidx.compose.material3.MaterialTheme
 import com.healersjourney.app.ui.components.AppOutlinedButton as OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import com.healersjourney.app.ui.components.AppTextButton as TextButton
 import androidx.compose.runtime.Composable
@@ -45,6 +48,7 @@ import com.healersjourney.app.data.backup.LocalBackupStore
 import com.healersjourney.app.data.sync.DriveSyncRepository
 import com.healersjourney.app.ui.DriveUiState
 import com.healersjourney.app.ui.GameViewModel
+import com.healersjourney.app.ui.GameSnapshot
 import com.healersjourney.app.ui.components.EmptyHint
 import com.healersjourney.app.ui.components.SectionCard
 import com.healersjourney.app.ui.components.StatLine
@@ -53,7 +57,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun DataScreen(viewModel: GameViewModel, drive: DriveUiState, onSignIn: () -> Unit) {
+fun DataScreen(snapshot: GameSnapshot, viewModel: GameViewModel, drive: DriveUiState, onSignIn: () -> Unit) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     var exporting by remember { mutableStateOf(false) }
@@ -76,6 +80,16 @@ fun DataScreen(viewModel: GameViewModel, drive: DriveUiState, onSignIn: () -> Un
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
+        SectionCard(title = "Game feedback") {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Reward sounds", Modifier.weight(1f))
+                Switch(snapshot.state.soundEnabled, { value -> viewModel.runQuiet { it.soundEnabled = value } })
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Haptic feedback", Modifier.weight(1f))
+                Switch(snapshot.state.hapticsEnabled, { value -> viewModel.runQuiet { it.hapticsEnabled = value } })
+            }
+        }
         SectionCard(title = "Google Drive") {
             StatLine("Status", if (drive.signedIn) "Signed in" else "Not signed in")
             StatLine(
@@ -180,6 +194,23 @@ fun DataScreen(viewModel: GameViewModel, drive: DriveUiState, onSignIn: () -> Un
             OutlinedButton(onClick = { importing = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Import pasted JSON")
             }
+        }
+
+        SectionCard(title = "Privacy") {
+            Text(
+                "Your activity and progress are stored on this device. Read how backups and exports are handled.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/nayanby/Healers-journey/blob/main/PRIVACY.md"))
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Privacy policy") }
         }
 
         SectionCard(title = "Danger zone", collapsible = true, initiallyExpanded = false) {

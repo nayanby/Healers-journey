@@ -6,22 +6,22 @@ import com.healersjourney.app.R
 object Art {
 
     fun badgeFor(title: String): Int = when (title) {
-        "Disciplined Seeker" -> R.drawable.color_badge_seeker
-        "Focused Builder" -> R.drawable.color_badge_builder
-        "Momentum Keeper" -> R.drawable.color_badge_keeper
-        "Master of Routine" -> R.drawable.color_badge_routine
-        "Iron Discipline" -> R.drawable.color_badge_iron
-        "Relentless Achiever" -> R.drawable.color_badge_achiever
-        "Legend of Consistency" -> R.drawable.color_badge_legend
-        else -> R.drawable.color_badge_initiate
+        "Disciplined Seeker" -> R.drawable.level_badge_seeker
+        "Focused Builder" -> R.drawable.level_badge_builder
+        "Momentum Keeper" -> R.drawable.level_badge_keeper
+        "Master of Routine" -> R.drawable.level_badge_routine
+        "Iron Discipline" -> R.drawable.level_badge_iron
+        "Relentless Achiever" -> R.drawable.level_badge_achiever
+        "Legend of Consistency" -> R.drawable.level_badge_legend
+        else -> R.drawable.level_badge_initiate
     }
 
     fun skillIcon(skill: String): Int = when (skill) {
-        "knowledgeXp", "knowledge" -> R.drawable.color_study
-        "medicineXp", "medicine" -> R.drawable.color_medicine
-        "strengthXp", "strength" -> R.drawable.color_fitness
-        "socialXp", "social" -> R.drawable.color_social
-        "hobbiesXp", "hobbies" -> R.drawable.color_hobbies
+        "knowledgeXp", "knowledge" -> R.drawable.gameart_icon_activity_learning
+        "medicineXp", "medicine" -> R.drawable.gameart_icon_activity_work
+        "strengthXp", "strength" -> R.drawable.gameart_icon_activity_fitness
+        "socialXp", "social" -> R.drawable.gameart_icon_activity_social
+        "hobbiesXp", "hobbies" -> R.drawable.gameart_icon_activity_creativity
         else -> R.drawable.color_xp
     }
 
@@ -33,7 +33,7 @@ object Art {
     }
 
     val achievements = R.drawable.color_achievement
-    val quickCare = R.drawable.color_sleep
+    val quickCare = R.drawable.gameart_icon_activity_sleep
     val streakStudy = R.drawable.color_streak
     val streakWorkout = R.drawable.color_streak
     val studyWeek = R.drawable.color_week

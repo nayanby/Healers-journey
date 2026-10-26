@@ -1,0 +1,46 @@
+{
+  "tool": "built-in image_gen",
+  "style": "Create ONE original colorful transparent PNG level badge for Life RPG. TIER. Premium charming soft 3D game icon, rounded sculpted forms, polished object shading, warm upper-left highlights, front-facing perfectly centered symmetric shield silhouette. Shared family palette: cobalt blue, teal, warm gold, silver, purple. Icon occupies 80% of square canvas, with generous clear margin. Actual transparent background, no tile, no text, letters, numerals, banners or surrounding scenery, no exterior cast shadow. Clean silhouette readable at small sizes. Progression series tier LEVEL.",
+  "tiers": [
+    [
+      "initiate",
+      1,
+      "A VERY SIMPLE starter shield: small warm matte wood shield, thin plain bronze rim, one tiny teal circular inset. Absolutely no gold, silver, crown, wings, leaves or extra ornament. Humble, friendly, intentionally minimal."
+    ],
+    [
+      "seeker",
+      5,
+      "A modest smooth bronze shield, clean bronze rim, one small teal diamond gem, two tiny rivets. Slightly more polished than wood, otherwise simple. No crown, wings or laurel."
+    ],
+    [
+      "builder",
+      10,
+      "A polished silver shield with cobalt enamel face, thin silver double rim, one medium teal diamond gem and a restrained geometric engraved accent. Elegant but not ornate. No crown or wings."
+    ],
+    [
+      "keeper",
+      20,
+      "A silver and gold shield with deep teal enamel, medium sapphire center gem, gold corner caps and two small gold side flourishes. A clear intermediate upgrade, modest ornament."
+    ],
+    [
+      "routine",
+      30,
+      "A luxurious gold shield with royal blue enamel, a bright teal faceted central gemstone, fine symmetric filigree along the gold rim and a compact gold laurel pair at its sides. No crown or wings."
+    ],
+    [
+      "iron",
+      50,
+      "A grand polished platinum shield with royal cobalt enamel, large teal faceted center jewel, rich gold filigree, three small accent gemstones and a substantial silver laurel frame. Elite craftsmanship. No crown, no wings."
+    ],
+    [
+      "achiever",
+      75,
+      "An extraordinary platinum and gold shield with royal purple-blue enamel, brilliant large teal diamond center, elaborate symmetrical gold filigree, a small three-point gold crown and short elegant gold feathered wings. Very ornate."
+    ],
+    [
+      "legend",
+      100,
+      "The magnificent ultimate legendary crest: radiant royal cobalt shield, thick layered platinum and gold rim, huge luminous teal faceted jewel, exquisite gold filigree, a jeweled five-point crown, sweeping symmetrical gold-and-ivory wings and a small gold laurel base. Most beautiful and elaborate tier, still one cohesive readable badge, no background aura."
+    ]
+  ]
+}

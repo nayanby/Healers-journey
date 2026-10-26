@@ -1,8 +1,11 @@
 package com.healersjourney.app.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -20,6 +23,8 @@ import com.healersjourney.app.R
 import com.healersjourney.app.domain.*
 import com.healersjourney.app.ui.GameSnapshot
 import com.healersjourney.app.ui.GameViewModel
+import com.healersjourney.app.ui.DriveUiState
+import com.healersjourney.app.data.games.PlayGamesUiState
 import com.healersjourney.app.ui.components.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,120 +32,65 @@ import java.util.Locale
 
 @Composable
 fun DashboardScreen(snapshot: GameSnapshot, viewModel: GameViewModel, onOpen: (Destination) -> Unit) {
-    val state = snapshot.state
-    val level = Rules.level(state.totalXp)
-    val title = Rules.title(level)
-    val xp = state.totalXp % Rules.XP_PER_LEVEL
-    val care = GameEngine.personalCareStats(state)
-    val pendingCare = care.items.count { it.last != Dates.todayKey() && it.missedUnits > 0 }
-    var titles by remember { mutableStateOf(false) }
-    var rename by remember { mutableStateOf(false) }
+    WorldHome(snapshot, viewModel, onOpen)
+}
+
+@Composable
+fun ExploreScreen(snapshot: GameSnapshot, viewModel: GameViewModel, onOpen: (Destination) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date()),
-                style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Your next chapter.", style = MaterialTheme.typography.headlineMedium)
-        }
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFF6557CF), Color(0xFF34458B))))
-            .padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(state.playerName, style = MaterialTheme.typography.titleLarge, color = Color.White,
-                            modifier = Modifier.weight(1f))
-                        IconButton(onClick = { rename = true }, modifier = Modifier.size(36.dp)) {
-                            Image(painterResource(R.drawable.color_edit), "Rename player", Modifier.size(22.dp))
+        JourneyHeading("Your story so far", "Look back at what you've done and plan ahead.")
+        ExploreGroup("Your journey", listOf(
+            Triple(Destination.Logs, R.drawable.color_logs, "Activity history & insights"),
+            Triple(Destination.Milestones, R.drawable.color_milestone, "Personal milestones"),
+            Triple(Destination.Achievements, R.drawable.color_achievement, "Achievements")
+        ), onOpen)
+        ExploreGroup("More tools", listOf(
+            Triple(Destination.Finance, R.drawable.color_finance, "Money & goals")
+        ), onOpen)
+    }
+}
+
+@Composable
+fun SettingsScreen(snapshot: GameSnapshot, viewModel: GameViewModel, drive: DriveUiState, onSignIn: () -> Unit,
+                   gamesState: PlayGamesUiState, onGamesSignIn: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
+        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Your character", style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf("male" to "Male", "female" to "Female").forEach { (key, label) ->
+                    val selected = (snapshot.state.worldEquipment["character"] ?: "male") == key
+                    Surface(Modifier.weight(1f).clickable { viewModel.runQuiet { it.worldEquipment["character"] = key } },
+                        shape = RoundedCornerShape(18.dp),
+                        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+                        Row(Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Image(gameArtPainter(GameArt.avatar("traveler", key), 128), null, Modifier.size(52.dp))
+                            Text(label, style = MaterialTheme.typography.labelLarge)
                         }
                     }
-                    Text("Level $level · $title", style = MaterialTheme.typography.bodySmall, color = Color(0xFFE4DFFF))
                 }
-                Spacer(Modifier.width(12.dp))
-                Image(painterResource(Art.badgeFor(title)), "View levels and titles",
-                    Modifier.size(72.dp).clip(RoundedCornerShape(16.dp)).clickable { titles = true })
             }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Next level", style = MaterialTheme.typography.labelMedium, color = Color.White)
-                    Text("$xp / ${Rules.XP_PER_LEVEL} XP", style = MaterialTheme.typography.labelMedium, color = Color.White)
+            }
+        }
+        SectionCard(title = "Google Play Games") {
+            Text(when {
+                gamesState.busy -> "Connecting…"
+                gamesState.signedIn -> gamesState.playerName?.let { "Connected as $it" } ?: "Connected"
+                else -> "Connect your Play Games profile."
+            }, style = MaterialTheme.typography.bodyMedium)
+            if (!gamesState.signedIn) {
+                Text("You can keep playing without signing in.", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                gamesState.message?.let { Text(it, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                AppButton(onClick = onGamesSignIn, enabled = !gamesState.busy) {
+                    Text(if (gamesState.busy) "Connecting…" else "Sign in with Play Games")
                 }
-                SimpleProgress(progress = { xp.toFloat() / Rules.XP_PER_LEVEL },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                    color = Color(0xFFFFD482), trackColor = Color.White.copy(alpha = 0.18f))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Image(painterResource(R.drawable.color_streak), null, Modifier.size(22.dp))
-                Text("${state.streak} day streak", style = MaterialTheme.typography.labelMedium, color = Color.White)
-                Spacer(Modifier.weight(1f))
-
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            JourneyHeading("Make a little progress", "Pick one thing to start.")
-            JourneyAction(R.drawable.color_todo, "Plan your day", "Your tasks, one at a time", Color(0xFFEDB765)) { onOpen(Destination.Todo) }
-            JourneyAction(R.drawable.color_study, "Find your focus", "${GameEngine.numText(GameEngine.studyHoursToday(state))} hours studied today", Color(0xFF8C9DFF)) { onOpen(Destination.Study) }
-            JourneyAction(R.drawable.color_care, "Look after yourself",
-                if (pendingCare > 0) "$pendingCare care routines need attention" else "Check in with your care routines", Color(0xFF69C9B7)) { onOpen(Destination.Care) }
-        }
-        GameEngine.visibleMilestones(state).firstOrNull { !it.completed }?.let { milestone ->
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                JourneyHeading("On the horizon")
-                JourneyAction(R.drawable.color_milestone, milestone.title,
-                    "Open your milestones", Color(0xFFF18A8A)) { onOpen(Destination.Milestones) }
-            }
-        }
-    }
-    if (titles) TitleShelfDialog(level) { titles = false }
-    if (rename) RenameDialog(state.playerName, { rename = false }) { name ->
-        viewModel.run { GameEngine.renamePlayer(it, name) }; rename = false
-    }
-}
-
-@Composable
-fun GrowthScreen(snapshot: GameSnapshot, onOpen: (Destination) -> Unit) {
-    val state = snapshot.state
-    val skills = listOf(
-        Triple(Destination.Study, "knowledgeXp", "Study"),
-        Triple(Destination.Medicine, "medicineXp", "Medicine"),
-        Triple(Destination.Fitness, "strengthXp", "Fitness"),
-        Triple(Destination.Social, "socialXp", "Social"),
-        Triple(Destination.Hobbies, "hobbiesXp", "Hobbies")
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        JourneyHeading("Build a life you love", "Small efforts grow into lasting skills.")
-        skills.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                pair.forEach { (destination, skill, name) ->
-                    val xp = GameEngine.weeklyXp(state, skill)
-                    GrowthTile(name, Art.skillIcon(skill), "$xp XP this week", skillColor(skill),
-                        xp.toFloat() / (Rules.WEEKLY_TARGETS[skill] ?: 1), Modifier.weight(1f)) { onOpen(destination) }
-                }
-                if (pair.size == 1) GrowthTile("Rest", R.drawable.color_sleep, "Sleep & recovery",
-                    Color(0xFFAE9ADE), null, Modifier.weight(1f)) { onOpen(Destination.Sleep) }
-            }
-        }
-        val series = Reports.weeklyStudySeries(state)
-        JourneyAction(R.drawable.color_week, "Your week in focus",
-            "${GameEngine.numText(series.sumOf { it.second })} study hours · ${GameEngine.workoutStreak(state)} day workout streak",
-            Color(0xFF69C9B7)) { onOpen(Destination.Logs) }
-    }
-}
-
-@Composable
-fun ExploreScreen(onOpen: (Destination) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        JourneyHeading("Room for every part of life", "Keep the essentials close.")
-        ExploreGroup("Everyday life", listOf(
-            Triple(Destination.Finance, R.drawable.color_finance, "Money & goals"),
-            Triple(Destination.Care, R.drawable.color_care, "Personal care")
-        ), onOpen)
-        ExploreGroup("Your journey", listOf(
-            Triple(Destination.Milestones, R.drawable.color_milestone, "Milestones"),
-            Triple(Destination.Achievements, R.drawable.color_achievement, "Achievements"),
-            Triple(Destination.Logs, R.drawable.color_logs, "History & insights"),
-            Triple(Destination.Daily, R.drawable.color_today, "Custom activity")
-        ), onOpen)
-        ExploreGroup("App", listOf(Triple(Destination.Data, R.drawable.color_sync, "Backup & sync")), onOpen)
+        DataScreen(snapshot, viewModel, drive, onSignIn)
     }
 }
 
@@ -164,9 +114,10 @@ private fun ExploreGroup(title: String, entries: List<Triple<Destination, Int, S
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun GrowthTile(title: String, icon: Int, detail: String, accent: Color, progress: Float?, modifier: Modifier, onClick: () -> Unit) {
-    Surface(modifier = modifier, onClick = onClick, shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
+    Surface(modifier = modifier.clickable(onClick = onClick), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(58.dp).clip(RoundedCornerShape(18.dp)).background(accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                 Image(painterResource(icon), null, Modifier.size(46.dp))
@@ -179,6 +130,7 @@ private fun GrowthTile(title: String, icon: Int, detail: String, accent: Color, 
                 modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
                 color = accent, trackColor = accent.copy(alpha = 0.12f))
             else Spacer(Modifier.height(4.dp))
+
         }
     }
 }

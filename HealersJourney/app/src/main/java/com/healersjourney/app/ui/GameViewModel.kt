@@ -13,6 +13,11 @@ import com.healersjourney.app.data.sync.SyncResult
 import com.healersjourney.app.domain.GameEngine
 import com.healersjourney.app.domain.GameState
 import com.healersjourney.app.domain.Outcome
+import com.healersjourney.app.domain.WorldRules
+import com.healersjourney.app.domain.Rules
+import com.healersjourney.app.domain.DailyCoinBonus
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +30,8 @@ import kotlinx.coroutines.sync.withLock
  * Compose recompose after every mutation.
  */
 data class GameSnapshot(val state: GameState, val revision: Int)
+data class GameReward(val xp: Int, val level: Int, val leveledUp: Boolean, val unlocks: List<String>, val care: Boolean,
+                      val name: String, val skill: String = "", val coins: Int = 0)
 
 data class DriveUiState(
     val configured: Boolean = false,
@@ -57,11 +64,14 @@ class GameViewModel(
 
     private val _loaded = MutableStateFlow(false)
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
+    private val rewardChannel = Channel<GameReward>(Channel.UNLIMITED)
+    val rewards = rewardChannel.receiveAsFlow()
 
     init {
         viewModelScope.launch {
             current = repository.load()
             GameEngine.ensureDefaults(current)
+            WorldRules.reconcile(current)
             repository.save(current)
             publish()
             refreshDriveState()
@@ -86,6 +96,7 @@ class GameViewModel(
     }
 
     private fun commit(forceBackup: Boolean = false) {
+        WorldRules.reconcile(current)
         publish()
         persist(forceBackup)
     }
@@ -96,8 +107,26 @@ class GameViewModel(
 
     /** Applies a mutation that can be rejected, surfacing the rejection as a message. */
     fun run(block: (GameState) -> Outcome) {
+        val xpBefore = current.totalXp
+        val levelBefore = Rules.level(xpBefore)
+        val unlockedBefore = current.worldUnlocks.toSet()
+        val actionsBefore = current.actionHistory.map { it.id }.toSet()
+        val coinClaimsBefore = current.coinRewardDays.toSet()
+        val claimsBefore = current.adventureClaims.size
         when (val outcome = block(current)) {
-            Outcome.Applied -> commit()
+            Outcome.Applied -> {
+                commit()
+                val newAction = current.actionHistory.firstOrNull { it.id !in actionsBefore }
+                val coinsEarned = (if (newAction?.id in current.coinAwardedActionIds) 10 else 0) +
+                    (current.coinRewardDays - coinClaimsBefore).sumOf { DailyCoinBonus.rewardForClaimKey(it) }
+                val unlocks = WorldRules.items.filter { it.id in current.worldUnlocks && it.id !in unlockedBefore }.map { it.name } +
+                    if (current.adventureClaims.size > claimsBefore) listOf("Adventure seal") else emptyList()
+                val gain = current.totalXp - xpBefore
+                if (gain > 0 || coinsEarned > 0 || newAction?.type == "care" || unlocks.isNotEmpty()) {
+                    rewardChannel.trySend(GameReward(gain.coerceAtLeast(0), Rules.level(current.totalXp),
+                        Rules.level(current.totalXp) > levelBefore, unlocks, newAction?.type == "care", newAction?.name ?: "Adventure complete", newAction?.skill ?: "", coinsEarned))
+                }
+            }
             is Outcome.Failure -> showMessage(outcome.message)
         }
     }

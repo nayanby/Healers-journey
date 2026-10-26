@@ -1,0 +1,30 @@
+{
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "id": "work",
+      "prompt": "Use case: stylized-concept. Single transparent PNG collectible sprite for Life RPG daily isometric garden. Subject: a small honey-stone monument made of three stacked building blocks with a brass gear inset, crafted solid silhouette. Cozy high quality pixel RPG art, chunky crisp pixels, dimensional warm three tone shading, saturated teal amber colors, approximately 64x64 logical detail enlarged. Isometric three quarter view from above. Entire object visible, centered, fills 80% square, base at bottom center, no tile or background, no text, no badge or frame, no tiny details. This is a world object rather than a UI icon. Actual transparency.",
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-cbc31456-4e4b-4274-8cb2-e8baf6ee81a8.png"
+    },
+    {
+      "id": "fitness",
+      "prompt": "Use case: stylized-concept. Single transparent PNG collectible sprite for Life RPG daily isometric garden. Subject: a cluster of three tall turquoise crystal spires, a warm gold band around the broad base. Cozy high quality pixel RPG art, chunky crisp pixels, dimensional warm three tone shading, saturated teal amber colors, approximately 64x64 logical detail enlarged. Isometric three quarter view from above. Entire object visible, centered, fills 80% square, base at bottom center, no tile or background, no text, no badge or frame, no tiny details. This is a world object rather than a UI icon. Actual transparency.",
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-8f3a65ff-d2ad-45a9-b4e9-0a88ebc47700.png"
+    },
+    {
+      "id": "social",
+      "prompt": "Use case: stylized-concept. Single transparent PNG collectible sprite for Life RPG daily isometric garden. Subject: a short warm timber lantern post holding two glowing amber lanterns, teal roof caps. Cozy high quality pixel RPG art, chunky crisp pixels, dimensional warm three tone shading, saturated teal amber colors, approximately 64x64 logical detail enlarged. Isometric three quarter view from above. Entire object visible, centered, fills 80% square, base at bottom center, no tile or background, no text, no badge or frame, no tiny details. This is a world object rather than a UI icon. Actual transparency.",
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-a7ce7a15-4e82-472d-a1b1-b63f12911ec0.png"
+    },
+    {
+      "id": "learning",
+      "prompt": "Use case: stylized-concept. Single transparent PNG collectible world object for Life RPG daily memory terrace. Subject: a honey-stone pedestal holding a large open blue book, two smaller closed books at its foot, brass star finial, a compact book shrine. Cozy high quality pixel RPG art, broad crisp pixel clusters, dimensional warm three-tone shading, teal amber palette, approximately 64x64 logical detail enlarged. Isometric three quarter view from above, centered entire object, base at bottom center, fills 80% square. NO TREES, plants, leaves or flowers. No ground tile, background, text, UI frame or badge. Actual transparency.",
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-ea0560bd-e1ef-4872-b4aa-8fc1617ff037.png"
+    },
+    {
+      "id": "creativity",
+      "prompt": "Use case: stylized-concept. Single transparent PNG collectible world object for Life RPG daily memory terrace. Subject: a small abstract sculpture of three interlocking curved ribbons in violet, coral and gold on a teal stone plinth. Cozy high quality pixel RPG art, broad crisp pixel clusters, dimensional warm three-tone shading, teal amber palette, approximately 64x64 logical detail enlarged. Isometric three quarter view from above, centered entire object, base at bottom center, fills 80% square. NO TREES, plants, leaves or flowers. No ground tile, background, text, UI frame or badge. Actual transparency.",
+      "path": "C:\\Users\\ANT-PC\\.codex\\generated_images\\01a15a3d-f3b4-7c61-bc55-64a24a26dd31\\exec-ea2682da-b7f5-428b-a399-8a355b3ca7ce.png"
+    }
+  ]
+}

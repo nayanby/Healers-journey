@@ -1,6 +1,7 @@
 package com.healersjourney.app.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -76,107 +77,43 @@ fun SkillSummaryCard(snapshot: GameSnapshot, skill: String) {
     }
 }
 
-/** The per-attribute quest list: two headline actions plus the player's own extras. */
+/** Shared category presets, with creation inside the expanded list. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SkillActivityCard(snapshot: GameSnapshot, viewModel: GameViewModel, skill: String) {
-    val state = snapshot.state
-    val color = skillColor(skill)
-    val label = Rules.SKILL_LABELS[skill] ?: skill
-    val major = GameEngine.defsFor(state, skill, "major")
-    val other = GameEngine.defsFor(state, skill, "other")
-    val totalXp = state.skillXp(skill)
     var expanded by rememberSaveable(skill) { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppLayout.cardRadius),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(Modifier.padding(AppLayout.screenPadding)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(Art.skillIcon(skill)),
-                    contentDescription = null,
-                    modifier = Modifier.size(AppLayout.illustration)
-                )
-                Spacer(Modifier.width(AppLayout.contentGap))
-                Text("Choose an activity", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-
+    var showEditor by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf<com.healersjourney.app.domain.ActivityDef?>(null) }
+    if (showEditor) PresetEditorDialog(skill, snapshot, viewModel, initialActivity = selected) { showEditor = false; selected = null }
+    SectionCard(title = "Choose an activity") {
+        TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+            Text(if (expanded) "Hide presets" else "Show presets")
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = expanded,
+            enter = androidx.compose.animation.expandVertically(animationSpec = androidx.compose.animation.core.tween(220)) +
+                androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(170)),
+            exit = androidx.compose.animation.shrinkVertically(animationSpec = androidx.compose.animation.core.tween(180)) +
+                androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(130))
+        ) {
+            Column {
+            val defs = listOf("major", "other").flatMap { list ->
+                GameEngine.defsFor(snapshot.state, skill, list).mapIndexed { index, def -> Triple(list, index, def) }
             }
-            Spacer(Modifier.height(AppLayout.contentGap))
-
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                major.forEachIndexed { index, def ->
-                    val (finalXp, decay) = GameEngine.activityXpPreview(state, skill, def.xp)
-                    FilledTonalButton(
-                        onClick = { viewModel.run { GameEngine.completeActivity(it, skill, "major", index) } },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Column {
-                            Text(
-                                def.name,
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                if (decay > 0) "+$finalXp (-$decay%)" else "+$finalXp",
-                                style = MaterialTheme.typography.labelSmall,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+            if (defs.isEmpty()) EmptyHint("No presets yet. Add your first activity below.")
+            defs.forEach { (list, index, def) ->
+                val (reward, decay) = GameEngine.activityXpPreview(snapshot.state, skill, def.xp)
+                Row(Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClickLabel = "Edit or delete preset",
+                    onLongClick = { selected = def; showEditor = true }).padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(Rules.activityLabel(skill, def.name), style = MaterialTheme.typography.bodyMedium)
+                        Text("+$reward XP" + if (decay > 0) " (-$decay%)" else "", style = MaterialTheme.typography.labelSmall)
                     }
+                    TextButton(onClick = { viewModel.run { GameEngine.completeActivity(it, skill, list, index) } }) { Text("Log") }
                 }
             }
-
-            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
-                Icon(
-                    if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(AppLayout.icon)
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(if (expanded) "Hide ${other.size} more" else "More (${other.size})")
-            }
-
-            if (expanded) {
-                if (other.isEmpty()) EmptyHint("No extra activities yet. Add one below.")
-                other.forEachIndexed { index, def ->
-                    val (finalXp, decay) = GameEngine.activityXpPreview(state, skill, def.xp)
-                    val id = def.id.ifEmpty { "${skill}_other_$index" }
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(def.name, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                if (decay > 0) "+$finalXp XP (-$decay%)" else "+$finalXp XP",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        TextButton(onClick = {
-                            viewModel.run { GameEngine.completeActivity(it, skill, "other", index) }
-                        }) { Text("Do") }
-                        IconButton(onClick = {
-                            viewModel.run { GameEngine.removeActivityById(it, skill, id) }
-                        }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription = "Remove ${def.name}",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(AppLayout.icon)
-                            )
-                        }
-                    }
-                }
-                AddActivityRow(skill) { name, xp ->
-                    viewModel.run { GameEngine.addActivity(it, skill, name, xp) }
-                }
+            TextButton(onClick = { selected = null; showEditor = true }) { Text("Add preset") }
             }
         }
     }

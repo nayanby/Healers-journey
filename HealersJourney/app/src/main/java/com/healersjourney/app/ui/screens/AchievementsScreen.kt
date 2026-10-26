@@ -2,6 +2,13 @@
 
 package com.healersjourney.app.ui.screens
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.healersjourney.app.ui.components.AchievementMedal
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
+
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +70,7 @@ fun AchievementsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
     val unlocked = all.count { it.unlocked }
     var filter by remember { mutableStateOf(AchievementFilter.All) }
     var adding by remember { mutableStateOf(false) }
+    var category by remember { mutableStateOf("Overall") }
 
     val grouped = Achievements.grouped(state).mapValues { (_, list) ->
         when (filter) {
@@ -72,91 +80,39 @@ fun AchievementsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
         }
     }.filterValues { it.isNotEmpty() }
 
-    Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
-        SectionCard(title = "Achievements") {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Filled.EmojiEvents,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(AppLayout.illustration)
-                )
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("$unlocked / ${all.size} unlocked", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "${Achievements.GROUP_ORDER.size} built-in groups plus your own",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("$unlocked / ${all.size} achievements earned", style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            (Achievements.GROUP_ORDER + "Custom").forEach { group ->
+                FilterChip(selected = category == group, onClick = { category = group }, label = { Text(group) })
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            AchievementFilter.entries.forEach { option -> FilterChip(selected = filter == option, onClick = { filter = option }, label = { Text(option.label) }) }
+        }
+        val rows = all.filter { (if(category == "Custom") it.custom else it.group == category) && when(filter) {
+            AchievementFilter.All -> true; AchievementFilter.Unlocked -> it.unlocked; AchievementFilter.Locked -> !it.unlocked
+        } }
+        if(rows.isEmpty()) EmptyHint("No achievements match this filter.")
+        rows.forEach { achievement ->
+            val tier = all.filter { it.group == achievement.group }.indexOf(achievement).coerceAtLeast(0) % 5
+            Row(Modifier.fillMaxWidth().heightIn(min=96.dp).padding(vertical=12.dp), verticalAlignment=Alignment.CenterVertically) {
+                AchievementMedal(achievement,tier)
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                    Text(achievement.name,style=MaterialTheme.typography.titleSmall)
+                    Text(achievement.desc,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${Rules.formatMetricValue(achievement.current.coerceAtMost(achievement.target))} / ${Rules.formatMetricValue(achievement.target)}" + if(achievement.unlocked) " · Earned" else "",
+                        style=MaterialTheme.typography.labelSmall,color=if(achievement.unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    if(!achievement.unlocked) LinearProgressIndicator(progress={ (achievement.current / achievement.target.coerceAtLeast(1.0)).toFloat().coerceIn(0f,1f) }, modifier=Modifier.fillMaxWidth().height(3.dp))
+                }
+                if(achievement.custom) IconButton(onClick={viewModel.runQuiet { GameEngine.removeCustomAchievement(it,achievement.id) }}) {
+                    Icon(Icons.Filled.Delete,contentDescription="Delete ${achievement.name}",modifier=Modifier.size(20.dp))
                 }
             }
-            Spacer(Modifier.height(AppLayout.contentGap))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(AppLayout.smallGap)) {
-                AchievementFilter.entries.forEach { option ->
-                    FilterChip(
-                        selected = option == filter,
-                        onClick = { filter = option },
-                        label = { Text(option.label) }
-                    )
-                }
-            }
+            HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.4f))
         }
-
-        if (grouped.isEmpty()) {
-            SectionCard(title = "Nothing to show") {
-                EmptyHint("No achievements match this filter.")
-            }
-        }
-
-        grouped.forEach { (group, list) ->
-            SectionCard(title = "$group · ${list.count { it.unlocked }}/${list.size}", collapsible = true, initiallyExpanded = false) {
-                list.forEach { achievement ->
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            if (achievement.unlocked) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
-                            contentDescription = null,
-                            tint = if (achievement.unlocked) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outlineVariant,
-                            modifier = Modifier.size(AppLayout.icon)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(achievement.name, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                achievement.desc,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2
-                            )
-                        }
-                        if (achievement.custom) {
-                            IconButton(onClick = {
-                                viewModel.runQuiet { GameEngine.removeCustomAchievement(it, achievement.id) }
-                            }) {
-                                Icon(
-                                    Icons.Filled.Delete,
-                                    contentDescription = "Delete ${achievement.name}",
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(AppLayout.icon)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        SectionCard(title = "Your custom achievements") {
-            StatLine("Defined", "${state.customAchievements.size}")
-            Spacer(Modifier.height(8.dp))
-            Button(onClick = { adding = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Create a custom achievement")
-            }
-        }
+        TextButton(onClick={adding=true}) { Text("Create achievement") }
     }
 
     if (adding) {

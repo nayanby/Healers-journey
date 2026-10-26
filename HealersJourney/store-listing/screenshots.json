@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "name": "Life RPG Google Play screenshots",
+  "profile": "play-phone-portrait",
+  "template": "halo",
+  "device": "android",
+  "sourceLanguage": "en",
+  "slides": [
+    {
+      "image": "source-screens/01-home.png",
+      "placement": {
+        "x": 220,
+        "y": 450,
+        "width": 640,
+        "rotation": 0
+      },
+      "title": "Your day. Your adventure."
+    },
+    {
+      "image": "source-screens/09-activity-chooser.png",
+      "placement": {
+        "x": 220,
+        "y": 450,
+        "width": 640,
+        "rotation": 0
+      },
+      "title": "Choose your next quest."
+    },
+    {
+      "image": "source-screens/05-today-progress.png",
+      "placement": {
+        "x": 220,
+        "y": 450,
+        "width": 640,
+        "rotation": 0
+      },
+      "title": "Earn a badge for every step."
+    },
+    {
+      "image": "source-screens/07-completed-tasks.png",
+      "placement": {
+        "x": 220,
+        "y": 450,
+        "width": 640,
+        "rotation": 0
+      },
+      "title": "Small actions add up."
+    },
+    {
+      "image": "source-screens/03-store.png",
+      "placement": {
+        "x": 220,
+        "y": 450,
+        "width": 640,
+        "rotation": 0
+      },
+      "title": "Make your hero your own."
+    },
+    {
+      "image": "source-screens/10-achievements.png",
+      "placement": {
+        "x": 220,
+        "y": 450,
+        "width": 640,
+        "rotation": 0
+      },
+      "title": "Celebrate your milestones."
+    }
+  ]
+}

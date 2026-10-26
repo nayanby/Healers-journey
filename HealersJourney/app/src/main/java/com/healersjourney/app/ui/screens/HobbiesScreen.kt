@@ -50,9 +50,9 @@ fun HobbiesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
     val color = skillColor("hobbiesXp")
 
     Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
-        SectionCard(title = "Log a hobby session") {
+        SectionCard(title = "Log a creative session") {
             if (hobbies.isEmpty()) {
-                EmptyHint("Add a hobby below first.")
+                EmptyHint("Add a creative interest below first.")
             } else {
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppLayout.smallGap)) {
                     hobbies.take(6).forEach { hobby ->
@@ -96,9 +96,9 @@ fun HobbiesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
             }
         }
 
-        SectionCard(title = "Your hobbies", collapsible = true, initiallyExpanded = false) {
+        SectionCard(title = "Your creative interests", collapsible = true, initiallyExpanded = false) {
             if (hobbies.isEmpty()) {
-                EmptyHint("No hobbies yet.")
+                EmptyHint("No creative interests yet.")
             } else {
                 hobbies.forEach { hobby ->
                     StatLine(
@@ -113,7 +113,7 @@ fun HobbiesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
                 OutlinedTextField(
                     value = newHobby,
                     onValueChange = { newHobby = it },
-                    label = { Text("New hobby name") },
+                    label = { Text("New creative interest") },
                     singleLine = true,
                     modifier = Modifier.weight(1f)
                 )
@@ -126,14 +126,14 @@ fun HobbiesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
             }
         }
 
-        SectionCard(title = "Hobby totals", collapsible = true, initiallyExpanded = false) {
-            StatLine("Hobbies XP", "${state.hobbiesXp}", color)
+        SectionCard(title = "Creative progress", collapsible = true, initiallyExpanded = false) {
+            StatLine("Creativity XP", "${state.hobbiesXp}", color)
             StatLine(
                 "This week",
                 "${GameEngine.weeklyXp(state, "hobbiesXp")} / ${Rules.WEEKLY_TARGETS["hobbiesXp"]}"
             )
             StatLine("Lifetime sessions", "${Achievements.lifetimeActionCount(state, "hobbiesXp")}")
-            StatLine("Days with a hobby", "${state.actionHistory.filter { it.skill == "hobbiesXp" }.map { it.date }.distinct().size}")
+            StatLine("Creative days", "${state.actionHistory.filter { it.skill == "hobbiesXp" }.map { it.date }.distinct().size}")
         }
 
         SkillActivityCard(snapshot, viewModel, "hobbiesXp")

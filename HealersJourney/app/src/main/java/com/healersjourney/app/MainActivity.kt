@@ -1,9 +1,18 @@
 package com.healersjourney.app
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.runtime.key
-import com.healersjourney.app.ui.screens.GrowthScreen
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+
 import com.healersjourney.app.ui.screens.ExploreScreen
+import com.healersjourney.app.ui.screens.OnboardingScreen
+import com.healersjourney.app.data.games.PlayGamesConnection
+import com.healersjourney.app.data.games.PlayGamesUiState
 import androidx.compose.ui.graphics.toArgb
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,6 +23,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,6 +56,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Sanitizer
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
@@ -75,6 +87,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -104,22 +118,31 @@ import com.healersjourney.app.ui.screens.SocialScreen
 import com.healersjourney.app.ui.screens.StudyScreen
 import com.healersjourney.app.ui.screens.TitleShelfDialog
 import com.healersjourney.app.ui.screens.TodoScreen
+import com.healersjourney.app.ui.screens.SettingsScreen
 import com.healersjourney.app.ui.theme.HealersJourneyTheme
 import kotlinx.coroutines.launch
 
 enum class Destination(val label: String, val icon: ImageVector) {
-    Dashboard("Home", Icons.Filled.Home),
+    Dashboard("World", Icons.Filled.Home),
     Growth("Growth", Icons.AutoMirrored.Filled.MenuBook),
-    More("More", Icons.Filled.Menu),
+    More("Journal", Icons.Filled.Menu),
+    Settings("Settings", Icons.Filled.Settings),
+    LearningProgress("Learning journey", Icons.AutoMirrored.Filled.MenuBook),
+    WorkProgress("Work journey", Icons.Filled.MedicalServices),
+    FitnessProgress("Fitness journey", Icons.Filled.FitnessCenter),
+    SocialProgress("Social journey", Icons.Filled.Groups),
+    CreativityProgress("Creative journey", Icons.Filled.MusicNote),
+    RestProgress("Rest & recovery", Icons.Filled.Bedtime),
     Daily("Quick activity", Icons.Filled.Bolt),
-    Study("Study", Icons.AutoMirrored.Filled.MenuBook),
-    Medicine("Medicine", Icons.Filled.MedicalServices),
+    Study("Learning", Icons.AutoMirrored.Filled.MenuBook),
+    Medicine("Work", Icons.Filled.MedicalServices),
     Fitness("Fitness", Icons.Filled.FitnessCenter),
     Social("Social", Icons.Filled.Groups),
     Sleep("Sleep", Icons.Filled.Bedtime),
-    Hobbies("Hobbies", Icons.Filled.MusicNote),
+    Hobbies("Creativity", Icons.Filled.MusicNote),
     Finance("Finance", Icons.Filled.AccountBalanceWallet),
-    Todo("To-do list", Icons.Filled.Checklist),
+    Character("Store", Icons.Filled.Sanitizer),
+    Todo("Today", Icons.Filled.Checklist),
     Care("Personal care", Icons.Filled.Sanitizer),
     Milestones("Milestones", Icons.Filled.Flag),
     Achievements("Achievements", Icons.Filled.WorkspacePremium),
@@ -128,6 +151,8 @@ enum class Destination(val label: String, val icon: ImageVector) {
 }
 
 class MainActivity : ComponentActivity() {
+
+    private val playGames by lazy { PlayGamesConnection(this) }
 
     private val viewModel: GameViewModel by viewModels {
         GameViewModel.Factory((application as HealersJourneyApp).container)
@@ -150,26 +175,57 @@ class MainActivity : ComponentActivity() {
                         isAppearanceLightNavigationBars = !dark
                     }
                 }
-                AppRoot(viewModel, onSignIn = { signIn.launch(viewModel.driveSignInIntent()) })
+                val gamesState by playGames.state.collectAsState()
+                AppRoot(viewModel, onSignIn = { signIn.launch(viewModel.driveSignInIntent()) },
+                    gamesState = gamesState, onGamesSignIn = playGames::signIn)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        playGames.refresh()
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit) {
+fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
+            gamesState: PlayGamesUiState, onGamesSignIn: () -> Unit) {
     val snapshot by viewModel.snapshot.collectAsState()
     val message by viewModel.message.collectAsState()
     val drive by viewModel.drive.collectAsState()
     val loaded by viewModel.loaded.collectAsState()
+    if (loaded && !snapshot.state.onboardingCompleted) {
+        OnboardingScreen(viewModel)
+        return
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     var destination by rememberSaveable { mutableStateOf(Destination.Dashboard) }
     var tab by rememberSaveable { mutableStateOf(Destination.Dashboard) }
-    val primary = listOf(Destination.Dashboard, Destination.Todo, Destination.Growth, Destination.More)
+    var todaySkill by rememberSaveable { mutableStateOf<String?>(null) }
+    val primary = listOf(Destination.Dashboard, Destination.Todo, Destination.Character, Destination.More)
+    val retiredPages = setOf(Destination.LearningProgress, Destination.WorkProgress, Destination.FitnessProgress, Destination.SocialProgress, Destination.CreativityProgress, Destination.RestProgress)
     val open: (Destination) -> Unit = { next ->
-        destination = next
-        if (next in primary) tab = next
+        val target = when {
+            next in retiredPages -> Destination.Dashboard
+            else -> when(next) {
+            Destination.Growth -> Destination.Dashboard
+            Destination.Care -> Destination.Care
+            Destination.Character -> Destination.Character
+            else -> next
+            }
+        }
+        if (target == Destination.Todo && next == Destination.Todo) {
+            todaySkill = null
+            viewModel.runQuiet { GameEngine.openTodoWindow(it) }
+        }
+        destination = target
+        if (target in primary) tab = target
+    }
+    LaunchedEffect(Unit) {
+        if (destination == Destination.Growth || destination in retiredPages) destination = Destination.Dashboard
+        if (tab == Destination.Growth) tab = Destination.Dashboard
     }
     BackHandler(enabled = destination !in primary) { destination = tab }
     LaunchedEffect(message) {
@@ -182,9 +238,9 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text(when (destination) {
-                    Destination.Dashboard -> "Life RPG"
+                    Destination.Dashboard -> "Home"
                     Destination.Todo -> "Today"
-                    Destination.More -> "Your world"
+                    Destination.More -> "Journal"
                     else -> destination.label
                 }, style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
@@ -192,19 +248,49 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    if (destination == Destination.More) IconButton(onClick = { open(Destination.Settings) }) {
+                        androidx.compose.material3.Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                    if (destination == Destination.Character) Row(Modifier.padding(end = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Image(com.healersjourney.app.ui.components.gameArtPainter(R.drawable.gameart_icon_coin),
+                            contentDescription = "Coins", modifier = Modifier.size(28.dp))
+                        Text("${snapshot.state.coins}", style = MaterialTheme.typography.titleMedium)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
         if (!loaded) Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        else key(destination) {
-            Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+        else AnimatedContent(targetState = destination, modifier = Modifier.fillMaxSize(),
+            transitionSpec = {
+                val from = primary.indexOf(initialState)
+                val to = primary.indexOf(targetState)
+                val direction = if (from >= 0 && to >= 0 && to < from) -1 else 1
+                (slideInHorizontally(tween(260)) { it * direction } + fadeIn(tween(180))) togetherWith
+                    (slideOutHorizontally(tween(220)) { -it * direction / 3 } + fadeOut(tween(150)))
+            }, label = "Main screen slide") { page ->
+            val screenScroll = rememberScrollState()
+            var scrollViewportTopPx by remember { mutableStateOf(0f) }
+            Column(Modifier.fillMaxSize().padding(padding)
+                .onGloballyPositioned { scrollViewportTopPx = it.positionInRoot().y }
+                .verticalScroll(screenScroll).padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(bottom = 20.dp)) {
-                    when (destination) {
+                    when (page) {
                         Destination.Dashboard -> DashboardScreen(snapshot, viewModel, open)
-                        Destination.Growth -> GrowthScreen(snapshot, open)
-                        Destination.More -> ExploreScreen(open)
+                        Destination.Growth -> DashboardScreen(snapshot, viewModel, open)
+                        Destination.LearningProgress -> DashboardScreen(snapshot, viewModel, open)
+                        Destination.WorkProgress -> DashboardScreen(snapshot, viewModel, open)
+                        Destination.FitnessProgress -> DashboardScreen(snapshot, viewModel, open)
+                        Destination.SocialProgress -> DashboardScreen(snapshot, viewModel, open)
+                        Destination.CreativityProgress -> DashboardScreen(snapshot, viewModel, open)
+                        Destination.RestProgress -> DashboardScreen(snapshot, viewModel, open)
+                        Destination.Character -> com.healersjourney.app.ui.screens.CharacterScreen(snapshot, viewModel)
+                        Destination.More -> ExploreScreen(snapshot, viewModel, open)
+                        Destination.Settings -> SettingsScreen(snapshot, viewModel, drive, onSignIn, gamesState, onGamesSignIn)
                         Destination.Daily -> DailyScreen(snapshot, viewModel)
                         Destination.Study -> StudyScreen(snapshot, viewModel)
                         Destination.Medicine -> MedicineScreen(snapshot, viewModel)
@@ -213,15 +299,17 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit) {
                         Destination.Sleep -> SleepScreen(snapshot, viewModel)
                         Destination.Hobbies -> HobbiesScreen(snapshot, viewModel)
                         Destination.Finance -> FinanceScreen(snapshot, viewModel)
-                        Destination.Todo -> TodoScreen(snapshot, viewModel)
+                        Destination.Todo -> TodoScreen(snapshot, viewModel, todaySkill, screenScroll, scrollViewportTopPx) { open(Destination.Sleep) }
                         Destination.Care -> CareScreen(snapshot, viewModel)
                         Destination.Milestones -> MilestonesScreen(snapshot, viewModel)
                         Destination.Achievements -> AchievementsScreen(snapshot, viewModel)
                         Destination.Logs -> LogsScreen(snapshot, viewModel)
-                        Destination.Data -> DataScreen(viewModel, drive, onSignIn)
+                        Destination.Data -> DataScreen(snapshot, viewModel, drive, onSignIn)
                     }
                 }
             }
         }
     }
+    com.healersjourney.app.ui.components.RewardCelebration(viewModel)
+
 }

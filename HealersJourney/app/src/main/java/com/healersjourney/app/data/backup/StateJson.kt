@@ -24,8 +24,46 @@ object StateJson {
 
     const val APP_NAME = "Life RPG"
     const val STORAGE_KEY = "healersJourneyLifeRpgV1"
-    const val BACKUP_VERSION = 34
+    const val BACKUP_VERSION = 38
     const val BACKUP_TYPE = "complete-local-storage-json"
+
+    /** Fields added after the original Room tables; kept in the same database transaction. */
+    fun encodeLocalExtras(state: GameState): JSONObject {
+        val all = encode(state)
+        val extras = JSONObject()
+        listOf("onboardingCompleted", "worldUnlocks", "worldEquipment", "coins", "coinRewardDays", "coinAwardedActionIds", "coinDebt", "adventureClaims", "dailyQuestDate", "dailyQuestIds",
+            "soundEnabled", "hapticsEnabled", "careRoutines", "careDefaultsVersion").forEach { extras.put(it, all.get(it)) }
+        extras.put("actionActivityIds", JSONObject().apply {
+            state.actionHistory.forEach { action -> action.activityId?.let { put(action.id, it) } }
+        })
+        return extras
+    }
+
+    fun restoreLocalExtras(state: GameState, text: String) {
+        val extras = JSONObject(text)
+        val saved = decode(text)
+        state.onboardingCompleted = saved.onboardingCompleted
+        state.worldUnlocks.addAll(saved.worldUnlocks)
+        state.worldEquipment.putAll(saved.worldEquipment)
+        state.coins = saved.coins
+        state.coinRewardDays.addAll(saved.coinRewardDays)
+        state.coinAwardedActionIds.addAll(saved.coinAwardedActionIds)
+        state.coinDebt = saved.coinDebt
+        state.adventureClaims.addAll(saved.adventureClaims)
+        state.dailyQuestDate = saved.dailyQuestDate
+        state.dailyQuestIds.addAll(saved.dailyQuestIds)
+        state.soundEnabled = saved.soundEnabled
+        state.hapticsEnabled = saved.hapticsEnabled
+        state.careRoutinesConfigured = saved.careRoutinesConfigured
+        state.careDefaultsVersion = saved.careDefaultsVersion
+        state.careRoutines.addAll(saved.careRoutines)
+        extras.optJSONObject("actionActivityIds")?.let { ids ->
+            state.actionHistory.indices.forEach { index ->
+                val action = state.actionHistory[index]
+                state.actionHistory[index] = action.copy(activityId = ids.optString(action.id).ifEmpty { null })
+            }
+        }
+    }
 
     fun backupEnvelope(state: GameState): String = JSONObject()
         .put("app", APP_NAME)
@@ -44,6 +82,18 @@ object StateJson {
 
     fun encode(state: GameState): JSONObject = JSONObject()
         .put("playerName", state.playerName)
+        .put("onboardingCompleted", state.onboardingCompleted)
+        .put("worldUnlocks", JSONArray(state.worldUnlocks.toList()))
+        .put("worldEquipment", encodeStringMap(state.worldEquipment))
+        .put("coins", state.coins)
+        .put("coinRewardDays", JSONArray(state.coinRewardDays.toList()))
+        .put("coinAwardedActionIds", JSONArray(state.coinAwardedActionIds.toList()))
+        .put("coinDebt", state.coinDebt)
+        .put("adventureClaims", JSONArray(state.adventureClaims.toList()))
+        .put("dailyQuestDate", state.dailyQuestDate)
+        .put("dailyQuestIds", JSONArray(state.dailyQuestIds))
+        .put("soundEnabled", state.soundEnabled)
+        .put("hapticsEnabled", state.hapticsEnabled)
         .put("totalXp", state.totalXp)
         .put("streak", state.streak)
         .put("lastSleepHours", state.lastSleepHours)
@@ -77,6 +127,11 @@ object StateJson {
         .put("customAchievements", encodeCustomAchievements(state.customAchievements))
         .put("milestones", encodeMilestones(state.milestones))
         .put("removedActivities", encodeRemovedActivities(state.removedActivities))
+        .put("careRoutines", if (state.careRoutinesConfigured) JSONArray().apply {
+            state.careRoutines.forEach { rule -> put(JSONObject().put("key", rule.key).put("label", rule.label)
+                .put("emoji", rule.emoji).put("cycleDays", rule.cycleDays).put("weight", rule.weight)) }
+        } else JSONObject.NULL)
+        .put("careDefaultsVersion", state.careDefaultsVersion)
         .put("personalCareLast", encodeStringMap(state.personalCareLast))
         .put("todoTasks", encodeTodos(state.todoTasks))
         .put("todoHistory", encodeTodoHistory(state.todoHistory))
@@ -119,6 +174,7 @@ object StateJson {
                     .put("careKey", a.careKey ?: JSONObject.NULL)
                     .put("previousCareLast", a.previousCareLast ?: JSONObject.NULL)
                     .put("newCareLast", a.newCareLast ?: JSONObject.NULL)
+                    .put("activityId", a.activityId ?: JSONObject.NULL)
             )
         }
         return arr
@@ -220,6 +276,19 @@ object StateJson {
     private fun decodeState(json: JSONObject): GameState {
         val state = GameState()
         state.playerName = json.optString("playerName", state.playerName)
+        // Existing saves predate onboarding and should open without an extra setup step.
+        state.onboardingCompleted = json.optBoolean("onboardingCompleted", true)
+        state.worldUnlocks.addAll(stringArray(json.optJSONArray("worldUnlocks")))
+        json.optJSONObject("worldEquipment")?.let { equipment -> equipment.keys().forEach { key -> state.worldEquipment[key] = equipment.optString(key) } }
+        state.coins = json.optInt("coins").coerceAtLeast(0)
+        state.coinRewardDays.addAll(stringArray(json.optJSONArray("coinRewardDays")))
+        state.coinAwardedActionIds.addAll(stringArray(json.optJSONArray("coinAwardedActionIds")))
+        state.coinDebt = json.optInt("coinDebt").coerceAtLeast(0)
+        state.adventureClaims.addAll(stringArray(json.optJSONArray("adventureClaims")))
+        state.dailyQuestDate = json.optString("dailyQuestDate")
+        state.dailyQuestIds.addAll(stringArray(json.optJSONArray("dailyQuestIds")))
+        state.soundEnabled = json.optBoolean("soundEnabled", true)
+        state.hapticsEnabled = json.optBoolean("hapticsEnabled", true)
         state.totalXp = json.optInt("totalXp")
         state.streak = json.optInt("streak")
         state.lastSleepHours = json.optDouble("lastSleepHours", state.lastSleepHours)
@@ -289,7 +358,8 @@ object StateJson {
                         monthlyInvestmentAmount = o.optDouble("monthlyInvestmentAmount"),
                         careKey = o.optString("careKey").ifEmpty { null },
                         previousCareLast = o.optString("previousCareLast").ifEmpty { null },
-                        newCareLast = o.optString("newCareLast").ifEmpty { null }
+                        newCareLast = o.optString("newCareLast").ifEmpty { null },
+                        activityId = if (o.isNull("activityId")) null else o.optString("activityId").ifEmpty { null }
                     )
                 )
             }
@@ -353,6 +423,20 @@ object StateJson {
             }
         }
 
+        json.optJSONArray("careRoutines")?.let { arr ->
+            state.careRoutinesConfigured = true
+            for (i in 0 until arr.length()) {
+                val item = arr.optJSONObject(i) ?: continue
+                val key = item.optString("key").trim()
+                val label = item.optString("label").trim().take(60)
+                if (key.isNotEmpty() && label.isNotEmpty() && state.careRoutines.none { it.key == key }) {
+                    state.careRoutines.add(com.healersjourney.app.domain.Rules.CareRule(key, label,
+                        item.optString("emoji", ""), item.optInt("cycleDays", 1).coerceIn(1, 365),
+                        item.optInt("weight", 2).coerceIn(1, 10)))
+                }
+            }
+        }
+        state.careDefaultsVersion = json.optInt("careDefaultsVersion", 0)
         json.optJSONObject("personalCareLast")?.let { care ->
             care.keys().forEach { key -> state.personalCareLast[key] = care.optString(key) }
         }

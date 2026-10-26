@@ -1,6 +1,11 @@
 package com.healersjourney.app.ui.components
 
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.getValue
@@ -84,7 +89,7 @@ fun SectionCard(
 ) {
     var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
     Card(
-        modifier = modifier.fillMaxWidth().animateContentSize(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AppLayout.cardRadius),
 
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -109,7 +114,16 @@ fun SectionCard(
                     Image(painterResource(if (expanded) R.drawable.color_up else R.drawable.color_down), null, Modifier.size(16.dp))
                 }
             }
-            if (!collapsible || expanded) {
+            if (collapsible) AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(180)),
+                exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(130))
+            ) {
+                Column {
+                    Spacer(Modifier.height(16.dp))
+                    content()
+                }
+            } else {
                 Spacer(Modifier.height(16.dp))
                 content()
             }

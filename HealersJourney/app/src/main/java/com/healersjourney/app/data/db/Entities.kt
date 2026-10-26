@@ -30,7 +30,8 @@ data class ProfileEntity(
     val todoViewOffset: Int,
     val todoViewMode: String,
     val hobbiesJson: String,
-    val removedActivitiesJson: String
+    val removedActivitiesJson: String,
+    @ColumnInfo(defaultValue = "'{}'") val gameExtrasJson: String = "{}"
 )
 
 @Entity(tableName = "actions")

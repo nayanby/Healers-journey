@@ -18,7 +18,8 @@ data class ActionEntry(
     val monthlyInvestmentAmount: Double = 0.0,
     val careKey: String? = null,
     val previousCareLast: String? = null,
-    val newCareLast: String? = null
+    val newCareLast: String? = null,
+    val activityId: String? = null
 )
 
 data class LogEntry(
@@ -77,6 +78,7 @@ data class RemovedActivity(
 
 class GameState {
     var playerName: String = "Nayan"
+    var onboardingCompleted: Boolean = false
     var totalXp: Int = 0
     var streak: Int = 0
     var lastSleepHours: Double = 6.0
@@ -111,7 +113,21 @@ class GameState {
     val customAchievements: MutableList<CustomAchievement> = mutableListOf()
     val milestones: MutableList<Milestone> = mutableListOf()
     val removedActivities: MutableList<RemovedActivity> = mutableListOf()
+    val worldUnlocks: MutableSet<String> = mutableSetOf()
+    val worldEquipment: MutableMap<String, String> = mutableMapOf()
+    var coins: Int = 0
+    val coinRewardDays: MutableSet<String> = mutableSetOf()
+    val coinAwardedActionIds: MutableSet<String> = mutableSetOf()
+    var coinDebt: Int = 0
+    val adventureClaims: MutableSet<String> = mutableSetOf()
+    var dailyQuestDate: String = ""
+    val dailyQuestIds: MutableList<String> = mutableListOf()
+    var soundEnabled: Boolean = true
+    var hapticsEnabled: Boolean = true
 
+    val careRoutines: MutableList<Rules.CareRule> = mutableListOf()
+    var careRoutinesConfigured: Boolean = false
+    var careDefaultsVersion: Int = 0
     val personalCareLast: MutableMap<String, String> = mutableMapOf()
     var personalCareResetBaseline: Boolean = true
     var decayStartDate: String = ""

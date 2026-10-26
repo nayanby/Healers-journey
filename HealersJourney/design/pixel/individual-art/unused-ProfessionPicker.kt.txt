@@ -1,0 +1,47 @@
+package com.healersjourney.app.ui.screens
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.healersjourney.app.domain.WorldRules
+import com.healersjourney.app.ui.GameSnapshot
+import com.healersjourney.app.ui.GameViewModel
+import com.healersjourney.app.ui.components.*
+
+@Composable
+fun ProfessionPicker(snapshot: GameSnapshot, viewModel: GameViewModel) {
+    val state = snapshot.state
+    SectionCard(title = "Choose your profession", collapsible = true, initiallyExpanded = false) {
+        Text("Current: ${WorldRules.profession(state).name}", style = MaterialTheme.typography.titleSmall)
+        Text("Choose the camp that represents your work. Change it anytime; your XP and activities stay with you.",
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(14.dp))
+        WorldRules.professions.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                pair.forEach { profession ->
+                    val selected = state.workProfession == profession.id
+                    Surface(Modifier.weight(1f), shape = RoundedCornerShape(18.dp),
+                        color = if(selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, if(selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+                        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Image(gameArtPainter(GameArt.workCamp(profession.id)), null, Modifier.fillMaxWidth().height(88.dp))
+                            Text(profession.name, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center, minLines = 2, maxLines = 2)
+                            Text(profession.place, style = MaterialTheme.typography.labelSmall)
+                            AppTonalButton(enabled = !selected, onClick = { viewModel.run { WorldRules.chooseProfession(it, profession.id) } }, modifier = Modifier.fillMaxWidth()) {
+                                Text(if(selected) "Selected" else "Choose")
+                            }
+                        }
+                    }
+                }
+                if(pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}

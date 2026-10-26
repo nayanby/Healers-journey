@@ -9,6 +9,7 @@
 *.aab
 *.jks
 *.keystore
+**/store-listing/private/
 .env
 .env.*
 
@@ -20,3 +21,14 @@
 **/design/icons/colorful-on-device.png
 **/design/icons/recovery.png
 **/design/icons/recovery-files.txt
+
+# Unrelated local worlds, logs, build overrides and generated store exports
+/lighthouse/
+/logs/
+/HealersJourney/build-play.gradle
+/HealersJourney/build-temp.gradle
+**/store-listing/*.zip
+**/store-listing/**/screenshots.zip
+**/store-listing/source-screens/
+**/store-listing/data-safety-review.png
+**/store-listing/play-console-review-status.png

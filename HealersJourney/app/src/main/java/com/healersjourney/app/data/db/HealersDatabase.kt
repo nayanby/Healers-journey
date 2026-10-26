@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
@@ -19,7 +21,7 @@ import androidx.room.RoomDatabase
         CareEntity::class,
         TodoEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class HealersDatabase : RoomDatabase() {
@@ -31,6 +33,11 @@ abstract class HealersDatabase : RoomDatabase() {
 
         fun create(context: Context): HealersDatabase =
             Room.databaseBuilder(context.applicationContext, HealersDatabase::class.java, NAME)
+                .addMigrations(object : Migration(1, 2) {
+                    override fun migrate(db: SupportSQLiteDatabase) {
+                        db.execSQL("ALTER TABLE profile ADD COLUMN gameExtrasJson TEXT NOT NULL DEFAULT '{}'")
+                    }
+                })
                 .build()
     }
 }

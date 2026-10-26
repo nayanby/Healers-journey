@@ -1,5 +1,13 @@
 package com.healersjourney.app.ui.screens
 
+import android.app.DatePickerDialog
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material3.OutlinedTextField
+import com.healersjourney.app.ui.components.NumberField
+import com.healersjourney.app.domain.Outcome
+import androidx.compose.ui.platform.LocalContext
+import java.util.Calendar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,10 +17,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
@@ -53,60 +64,115 @@ private val AVATAR_STATES = listOf(
     Triple("filthy", "Filthy", "0 – 20")
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CareScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
     val state = snapshot.state
     val stats = GameEngine.personalCareStats(state)
+    val context = LocalContext.current
     var showAvatars by remember { mutableStateOf(false) }
+    var editorOpen by remember { mutableStateOf(false) }
+    var addMenuOpen by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<CareItemStatus?>(null) }
+    if (editorOpen) CareRoutineEditor(editing, viewModel) { editorOpen = false }
+
     Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
         SectionCard(title = "A moment for yourself") {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(Art.careAvatar(Rules.careAvatarKey(stats.score))),
-                    "View care states", Modifier.size(64.dp).clickable { showAvatars = true })
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(stats.rank, style = MaterialTheme.typography.titleLarge)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                WorldCharacter(state, Modifier.size(132.dp)) { showAvatars = true }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stats.rank, style = MaterialTheme.typography.titleMedium)
                     XpProgress(stats.score.toFloat() / GameEngine.CARE_SCORE_MAX,
                         "${stats.score} / ${GameEngine.CARE_SCORE_MAX} care score", MaterialTheme.colorScheme.tertiary)
+                    Text("Tap your character to compare care states.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
         SectionCard(title = "Your routines") {
+            Text("Hold a routine to edit its frequency or remove it.", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             stats.items.forEachIndexed { index, item ->
                 val done = item.last == Dates.todayKey()
-                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(com.healersjourney.app.ui.components.AppIcons.care(item.key)), null, Modifier.size(36.dp))
-                    Spacer(Modifier.width(12.dp))
+                Row(Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClickLabel = "Edit routine", onLongClick = { editing = item; editorOpen = true }).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Image(com.healersjourney.app.ui.components.gameArtPainter(com.healersjourney.app.ui.components.AppIcons.care(item.key)), null, Modifier.size(28.dp))
+                    Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f)) {
                         Text(item.label, style = MaterialTheme.typography.titleSmall)
-                        Text(dueCaption(item, done), style = MaterialTheme.typography.bodySmall,
+                        Text("Every ${item.cycleDays}d · ${dueCaption(item, done)}", style = MaterialTheme.typography.bodySmall,
                             color = if (item.missedUnits > 0 && !done) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Spacer(Modifier.width(8.dp))
-                    Button(onClick = { viewModel.run { GameEngine.completePersonalCare(it, item.key) } }, enabled = !done) {
-                        Text(if (done) "Done" else "Log")
-                    }
+                    Spacer(Modifier.width(4.dp))
+                    if (done) Text("Done ✓", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    else Button(onClick = {
+                        val now = Calendar.getInstance()
+                        DatePickerDialog(context, { _, year, month, day ->
+                            val selected = Calendar.getInstance().apply { set(year, month, day) }
+                            val date = Dates.dateKeyOf(selected)
+                            viewModel.run { current ->
+                                val result = GameEngine.completePersonalCare(current, item.key, date)
+                                if (result is com.healersjourney.app.domain.Outcome.Applied) {
+                                    viewModel.showMessage("${item.label} logged for ${Dates.prettyCareDate(date)}")
+                                }
+                                result
+                            }
+                        }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).apply {
+                            setTitle("${item.label}: date completed")
+                            datePicker.maxDate = System.currentTimeMillis()
+                            show()
+                        }
+                    }) { Text("Log") }
                 }
                 if (index < stats.items.lastIndex) androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             }
         }
-        SectionCard(title = "Routine details", collapsible = true, initiallyExpanded = false) {
-            Text("Care starts at 60 points. Each missed routine cycle reduces the score by its weight.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(16.dp))
-            stats.items.forEach { item ->
-                Text(item.label, style = MaterialTheme.typography.titleSmall)
-                Text("Every ${item.cycleDays} days · Weight ${item.weight} · ${item.loss} points lost · Last done ${Dates.prettyCareDate(item.last)}",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(12.dp))
-            }
-        }
+        TextButton(onClick = { addMenuOpen = true }) { Text("Add routine") }
         SectionCard(title = "Care history", collapsible = true, initiallyExpanded = false) {
             val entries = state.taskLog.filter { it.text.contains("personal care", true) }.take(10)
             if (entries.isEmpty()) Text("Your care check-ins will appear here.", style = MaterialTheme.typography.bodyMedium)
-            entries.forEach { Text(it.text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 6.dp)) }
+            entries.forEach { entry ->
+                Text(com.healersjourney.app.domain.FriendlyLog.entry(entry, state), style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(vertical = 6.dp))
+            }
         }
     }
-    if (showAvatars) CareAvatarDialog(stats.score) { showAvatars = false }
+    if (addMenuOpen) AlertDialog(onDismissRequest = { addMenuOpen = false },
+        title = { Text("Add a care routine") },
+        text = {
+            Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Rules.CARE_SUGGESTIONS.forEach { rule ->
+                    val added = state.careRoutines.any { it.key == rule.key || it.label.equals(rule.label, true) }
+                    TextButton(onClick = {
+                        viewModel.run { current ->
+                            val result = GameEngine.addSuggestedCareRoutine(current, rule.key)
+                            if (result is Outcome.Applied) addMenuOpen = false
+                            result
+                        }
+                    }, enabled = !added, modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Image(com.healersjourney.app.ui.components.gameArtPainter(
+                                com.healersjourney.app.ui.components.AppIcons.care(rule.key)), null, Modifier.size(32.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(rule.label, style = MaterialTheme.typography.bodyMedium)
+                                Text("Every ${rule.cycleDays} day${if (rule.cycleDays == 1) "" else "s"}",
+                                    style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (added) Text("Added", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+                androidx.compose.material3.HorizontalDivider()
+                TextButton(onClick = {
+                    addMenuOpen = false
+                    editing = null
+                    editorOpen = true
+                }, modifier = Modifier.fillMaxWidth()) { Text("Create custom routine") }
+            }
+        },
+        confirmButton = { TextButton(onClick = { addMenuOpen = false }) { Text("Close") } })
+    if (showAvatars) CareAvatarDialog(state, stats.score) { showAvatars = false }
 }
 private fun dueCaption(item: CareItemStatus, doneToday: Boolean): String {
     val left = item.cycleDays - item.days
@@ -119,63 +185,43 @@ private fun dueCaption(item: CareItemStatus, doneToday: Boolean): String {
 }
 
 @Composable
-private fun CareAvatarDialog(score: Int, onDismiss: () -> Unit) {
-    val currentKey = Rules.careAvatarKey(score)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Avatar states") },
+private fun CareAvatarDialog(state: com.healersjourney.app.domain.GameState, score: Int, onDismiss: () -> Unit) {
+    var preview by remember { mutableStateOf(score) }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Your character's care") },
         text = {
             Column {
-                Text(
-                    "Your avatar follows the care score out of ${GameEngine.CARE_SCORE_MAX}.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(12.dp))
-                AVATAR_STATES.forEach { (key, label, range) ->
-                    val active = key == currentKey
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 3.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (active) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-                            )
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Image(
-                            painter = painterResource(Art.careAvatar(key)),
-                            contentDescription = "$label avatar",
-                            modifier = Modifier.size(52.dp),
-                            alpha = if (active) 1f else 0.5f
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                label,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = if (active) MaterialTheme.colorScheme.onSecondaryContainer
-                                else MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                "Score $range",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (active) {
-                            Text(
-                                "Now",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        }
-                    }
+                WorldCharacter(state, Modifier.size(144.dp), previewScore = preview)
+                Text("Current state: ${GameEngine.personalCareStats(state).rank}. This preview does not change your care score.",
+                    style = MaterialTheme.typography.bodySmall)
+                listOf(60 to "Pristine · Score 51–60", 45 to "Grimy · Score 41–50", 30 to "Dirty · Score 21–40", 10 to "Filthy · Score 0–20").forEach { (value, label) ->
+                    TextButton(onClick = { preview = value }) { Text(label, style = MaterialTheme.typography.labelMedium) }
                 }
             }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } }
-    )
+        }, confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } })
+}
+
+@Composable
+private fun CareRoutineEditor(item: CareItemStatus?, viewModel: GameViewModel, onClose: () -> Unit) {
+    var name by remember(item?.key) { mutableStateOf(item?.label ?: "") }
+    var days by remember(item?.key) { mutableStateOf(item?.cycleDays?.toString() ?: "1") }
+    var confirmDelete by remember { mutableStateOf(false) }
+    AlertDialog(onDismissRequest = onClose, title = { Text(if (item == null) "New care routine" else "Edit care routine") },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(name, { name = it.take(60) }, label = { Text("Routine name") }, singleLine = true)
+            NumberField(value = days, onValueChange = { days = it }, label = "Repeat every (days)")
+            Text("1–365 days. Your past check-ins stay in history.", style = MaterialTheme.typography.bodySmall)
+            if (item != null) TextButton(onClick = { confirmDelete = true }) { Text("Remove routine", color = MaterialTheme.colorScheme.error) }
+        } },
+        confirmButton = { TextButton(onClick = { viewModel.run { state ->
+            val result = GameEngine.saveCareRoutine(state, item?.key, name, days.toIntOrNull() ?: 0)
+            if (result is Outcome.Applied) onClose()
+            result
+        } }) { Text("Save") } }, dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } })
+    if (confirmDelete && item != null) AlertDialog(onDismissRequest = { confirmDelete = false },
+        title = { Text("Remove ${item.label}?") }, text = { Text("It will stop affecting care. Past check-ins remain in history.") },
+        confirmButton = { TextButton(onClick = { viewModel.run { state ->
+            val result = GameEngine.removeCareRoutine(state, item.key)
+            if (result is Outcome.Applied) onClose()
+            result
+        } }) { Text("Remove") } }, dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Keep") } })
 }

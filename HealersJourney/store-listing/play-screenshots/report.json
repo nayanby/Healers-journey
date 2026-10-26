@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "project": "Life RPG Google Play screenshots",
+  "profile": "play-phone-portrait",
+  "width": 1080,
+  "height": 1920,
+  "languages": [
+    "en"
+  ],
+  "files": [
+    {
+      "name": "en/01.png",
+      "bytes": 783220,
+      "width": 1080,
+      "height": 1920,
+      "format": "png",
+      "overLimit": false,
+      "large": false
+    },
+    {
+      "name": "en/02.png",
+      "bytes": 347182,
+      "width": 1080,
+      "height": 1920,
+      "format": "png",
+      "overLimit": false,
+      "large": false
+    },
+    {
+      "name": "en/03.png",
+      "bytes": 584605,
+      "width": 1080,
+      "height": 1920,
+      "format": "png",
+      "overLimit": false,
+      "large": false
+    },
+    {
+      "name": "en/04.png",
+      "bytes": 428683,
+      "width": 1080,
+      "height": 1920,
+      "format": "png",
+      "overLimit": false,
+      "large": false
+    },
+    {
+      "name": "en/05.png",
+      "bytes": 380496,
+      "width": 1080,
+      "height": 1920,
+      "format": "png",
+      "overLimit": false,
+      "large": false
+    },
+    {
+      "name": "en/06.png",
+      "bytes": 390320,
+      "width": 1080,
+      "height": 1920,
+      "format": "png",
+      "overLimit": false,
+      "large": false
+    }
+  ],
+  "warnings": [
+    "Review Google Play content guidance: avoid rankings, testimonials, awards, prices, and promotional claims. Tablet and Chromebook captures should show the app interface without extra promotional text."
+  ],
+  "preview": "preview.png",
+  "editableProject": "project.henscreenshots",
+  "archive": "screenshots.zip",
+  "captionReview": "Review every language and the preview before publishing.",
+  "supportedLanguages": [
+    "en",
+    "es",
+    "fr",
+    "de",
+    "pt",
+    "pt-BR",
+    "it",
+    "nl",
+    "da",
+    "sv",
+    "no",
+    "fi",
+    "pl",
+    "cs",
+    "ro",
+    "hu",
+    "tr",
+    "id"
+  ]
+}

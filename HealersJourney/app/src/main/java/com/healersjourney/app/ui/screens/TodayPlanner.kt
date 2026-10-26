@@ -1,0 +1,259 @@
+package com.healersjourney.app.ui.screens
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
+import com.healersjourney.app.domain.*
+import com.healersjourney.app.ui.*
+import com.healersjourney.app.ui.components.*
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+
+private data class SavedChoice(
+    val skill: String,
+    val activity: ActivityDef,
+    val uses: Int,
+    val categoryOrder: Int,
+    val sourceOrder: Int
+)
+
+@Composable
+private fun CompactTodayCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            content()
+        }
+    }
+}
+
+private fun savedChoices(state: GameState, category: String, query: String): Pair<List<SavedChoice>, List<SavedChoice>> {
+    val countsById = state.actionHistory.asSequence().filter { it.xp > 0 && it.activityId != null }
+        .groupingBy { it.skill to it.activityId }.eachCount()
+    val countsByName = state.actionHistory.asSequence().filter { it.xp > 0 }
+        .groupingBy { it.skill to Rules.activityLabel(it.skill, it.name).trim().lowercase() }.eachCount()
+    val search = query.trim()
+    val rankedByCategory = Rules.SKILL_KEYS.withIndex()
+        .filter { category == "all" || category == it.value }
+        .map { (categoryOrder, skill) ->
+            val lists = state.activityDefs[skill]
+            (lists?.major.orEmpty() + lists?.other.orEmpty()).withIndex()
+                .mapNotNull { (sourceOrder, activity) ->
+                    val label = Rules.activityLabel(skill, activity.name)
+                    if (!label.contains(search, ignoreCase = true)) null else SavedChoice(
+                        skill, activity,
+                        maxOf(countsById[skill to activity.id] ?: 0,
+                            countsByName[skill to label.trim().lowercase()] ?: 0),
+                        categoryOrder, sourceOrder
+                    )
+                }
+                .sortedWith(compareByDescending<SavedChoice> { it.uses }.thenBy { it.sourceOrder })
+        }
+    val featured = if (search.isEmpty()) rankedByCategory.mapNotNull { it.firstOrNull() } else emptyList()
+    val remaining = rankedByCategory.flatMap { if (search.isEmpty()) it.drop(1) else it }
+        .sortedWith(compareByDescending<SavedChoice> { it.uses }
+            .thenBy { it.categoryOrder }.thenBy { it.sourceOrder })
+    return featured to remaining
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: String? = null,
+               screenScroll: ScrollState, scrollViewportTopPx: Float, onOpenSleep: () -> Unit = {}) {
+    val state = snapshot.state
+    val view = remember(snapshot.revision) { GameEngine.getTodoListForView(state) }
+    var adding by rememberSaveable(view.key, initialSkill) { mutableStateOf(initialSkill in Rules.SKILL_KEYS) }
+    var mode by rememberSaveable { mutableStateOf("saved") }
+    var query by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable(initialSkill) { mutableStateOf(initialSkill?.takeIf { it in Rules.SKILL_KEYS } ?: "all") }
+    var visibleExtra by rememberSaveable(view.key, query, category) { mutableIntStateOf(0) }
+    var pickerButtonTopPx by remember { mutableIntStateOf(0) }
+    val scrollScope = rememberCoroutineScope()
+    var selected by remember { mutableStateOf<Pair<String, ActivityDef>?>(null) }
+    var newPreset by remember { mutableStateOf(false) }
+    var removing by remember { mutableStateOf<TodoTask?>(null) }
+    selected?.let { (skill, activity) -> PresetEditorDialog(skill, snapshot, viewModel, activity) { selected = null } }
+    if (newPreset) PresetEditorDialog(category.takeIf { it in Rules.SKILL_KEYS } ?: Rules.SKILL_KEYS.first(), snapshot, viewModel) { newPreset = false }
+    removing?.let { task -> AlertDialog(onDismissRequest = { removing = null }, title = { Text("Remove ${task.name}?") },
+        text = { Text(if (task.completed) "This will also remove the XP and badge earned from this task." else "This task will be removed from your day.") },
+        confirmButton = { AppTextButton(onClick = { viewModel.run { GameEngine.deleteTodoTask(it, task.id) }; removing = null }) { Text("Remove") } },
+        dismissButton = { AppTextButton(onClick = { removing = null }) { Text("Keep") } }) }
+    Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FilledIconButton(onClick = { viewModel.runQuiet { GameEngine.showPreviousTodoDay(it) } },
+                modifier = Modifier.size(50.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous day", modifier = Modifier.size(27.dp))
+            }
+            AnimatedContent(targetState = view.key, modifier = Modifier.weight(1f),
+                transitionSpec = {
+                    val direction = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally(tween(300)) { it * direction } + fadeIn(tween(220))) togetherWith
+                        (slideOutHorizontally(tween(300)) { -it * direction } + fadeOut(tween(180)))
+                }, label = "Day heading") { day ->
+                val tasks = if (day == state.todoDate) state.todoTasks else state.todoHistory[day].orEmpty()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(Dates.todoDisplayDate(day), style = MaterialTheme.typography.titleMedium)
+                    Text("${tasks.count { it.completed }} / ${tasks.size} done · ${state.actionHistory.filter { it.date == day }.sumOf { it.xp }} XP · ${state.coins} coins", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+            FilledIconButton(onClick = { viewModel.runQuiet { GameEngine.showNextTodoDay(it) } },
+                modifier = Modifier.size(50.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next day", modifier = Modifier.size(27.dp))
+            }
+        }
+        if (!view.viewingToday) AppTextButton(onClick = { viewModel.runQuiet { GameEngine.openTodoWindow(it) } }) { Text("Back to today") }
+        if (initialSkill == "sleep") AppTonalButton(onClick = onOpenSleep) { Text("Open sleep tracker") }
+        AnimatedContent(targetState = view.key,
+            transitionSpec = {
+                val direction = if (targetState > initialState) 1 else -1
+                ((slideInHorizontally(tween(360)) { it * direction } + fadeIn(tween(200))) togetherWith
+                    (slideOutHorizontally(tween(360)) { -it * direction } + fadeOut(tween(200))))
+                    .using(SizeTransform(clip = true))
+            }, label = "Day shelf slide") { day ->
+            DayShowcase(state, day, snapshot.revision)
+        }
+        if (view.list.isEmpty()) EmptyHint("Your day, your pace. Add a task or choose an activity you've saved.")
+        else CompactTodayCard(title = "Today's tasks") {
+            view.list.sortedBy { it.completed }.forEach { task ->
+                val earnedCoins = state.actionHistory.firstOrNull { it.activityId == task.id }
+                    ?.let { if (it.id in state.coinAwardedActionIds) 10 else 0 } ?: 0
+                Row(Modifier.fillMaxWidth().height(60.dp).combinedClickable(onClick = {}, onLongClickLabel = "Remove task", onLongClick = { removing = task }).padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Image(gameArtPainter(Art.skillIcon(task.skill)), null, Modifier.size(26.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(task.name, style = MaterialTheme.typography.bodyMedium,
+                            textDecoration = if (task.completed) TextDecoration.LineThrough else TextDecoration.None,
+                            color = if (task.completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                            maxLines=1, overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text(if (task.completed) "${Rules.SKILL_LABELS[task.skill] ?: task.skill} · Completed${if (earnedCoins > 0) " · +$earnedCoins coins" else ""}"
+                            else "${Rules.SKILL_LABELS[task.skill] ?: task.skill} · +${GameEngine.activityXpPreviewForDate(state, task.skill, task.xp, view.key).first} XP",
+                            style = MaterialTheme.typography.labelSmall, maxLines=1)
+                    }
+                    if (task.completed) AppTextButton(onClick = { viewModel.run { GameEngine.undoTodoTask(it, task.id) } }) { Text("Undo") }
+                    else AppTonalButton(onClick = { viewModel.run { GameEngine.completeTodoTask(it, task.id) } }) {
+                        Text("Done")
+                    }
+                }
+            }
+        }
+        if (!adding) AppButton(onClick = {
+                mode = "saved"
+                query = ""
+                category = initialSkill?.takeIf { it in Rules.SKILL_KEYS } ?: "all"
+                visibleExtra = 0
+                adding = true
+                scrollScope.launch {
+                    withFrameNanos { }
+                    screenScroll.animateScrollTo(pickerButtonTopPx.coerceAtLeast(0), androidx.compose.animation.core.tween(240))
+                    // The picker expands during the first scroll, increasing the available range.
+                    screenScroll.animateScrollTo(pickerButtonTopPx.coerceAtLeast(0), androidx.compose.animation.core.tween(160))
+                }
+        }, modifier = Modifier.fillMaxWidth().onGloballyPositioned { coordinates ->
+            pickerButtonTopPx = (coordinates.positionInRoot().y - scrollViewportTopPx + screenScroll.value).roundToInt()
+        }) { Text("Add to your day") }
+        else Row(Modifier.fillMaxWidth().onGloballyPositioned { coordinates ->
+            pickerButtonTopPx = (coordinates.positionInRoot().y - scrollViewportTopPx + screenScroll.value).roundToInt()
+        }, verticalAlignment = Alignment.CenterVertically) {
+            Text("Add to your day", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            IconButton(onClick = { adding = false }) {
+                Icon(Icons.Filled.Close, contentDescription = "Close task picker")
+            }
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = adding,
+            enter = androidx.compose.animation.expandVertically(animationSpec = androidx.compose.animation.core.tween(240)) +
+                androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(180)),
+            exit = androidx.compose.animation.shrinkVertically(animationSpec = androidx.compose.animation.core.tween(200)) +
+                androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(140))
+        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = mode == "saved", onClick = { mode = "saved" }, label = { Text("Saved activities") })
+                FilterChip(selected = mode == "new", onClick = { mode = "new" }, label = { Text("New task") })
+            }
+            if (mode == "new") NewTodayTask(viewModel) { adding = false }
+            else CompactTodayCard(title = "Find an activity") {
+                OutlinedTextField(query, { query = it }, label = { Text("Search saved activities") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    (listOf("all") + Rules.SKILL_KEYS).forEach { key -> FilterChip(selected = category == key, onClick = { category = key }, label = { Text(Rules.SKILL_LABELS[key] ?: "All") }) }
+                }
+                val (featured, remaining) = remember(snapshot.revision, category, query) {
+                    savedChoices(state, category, query)
+                }
+                val initialResults = if (query.isBlank()) 0 else 10
+                val shownOthers = (initialResults + visibleExtra).coerceAtMost(remaining.size)
+                val visible = featured + remaining.take(shownOthers)
+                if (visible.isEmpty()) Text("No matching activities. Create a new task or save a new activity.")
+                visible.forEach { (skill, activity, uses) ->
+                    val name = Rules.activityLabel(skill, activity.name)
+                    val added = view.list.any { it.skill == skill && it.name.equals(name, true) }
+                    Row(Modifier.fillMaxWidth().height(58.dp).combinedClickable(onClick = {}, onLongClickLabel = "Edit or delete saved activity", onLongClick = { selected = skill to activity }).padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Image(gameArtPainter(Art.skillIcon(skill)), null, Modifier.size(24.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(name, style = MaterialTheme.typography.bodyMedium, maxLines=1, overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text("${Rules.SKILL_LABELS[skill]} · ${if (uses > 0) "$uses uses · " else ""}${activity.xp} base XP", style = MaterialTheme.typography.labelSmall)
+                        }
+                        AppTextButton(enabled = !added, onClick = { viewModel.run { GameEngine.addTodoTask(it, name, skill, activity.xp) } }) { Text(if (added) "Added" else "Add") }
+                    }
+                }
+                if (shownOthers < remaining.size) AppTextButton(onClick = { visibleExtra += 10 },
+                    modifier = Modifier.fillMaxWidth()) { Text("More activities (next ${minOf(10, remaining.size - shownOthers)})") }
+                Text("Hold an activity to edit or delete it.", style = MaterialTheme.typography.bodySmall)
+                AppTextButton(onClick = { newPreset = true }) { Text("Save a new activity${if (category in Rules.SKILL_KEYS) " in ${Rules.SKILL_LABELS[category]}" else ""}") }
+            }
+        }
+        }
+        SectionCard(title = "How XP works", collapsible = true, initiallyExpanded = false) {
+            Text("Each category earns its first 200 base XP at full value per game day, its next 200 at 50%, then 25%. Learning uses 50 base XP/hour and shares this calculation. The day resets at 5 AM. Neglected categories never reduce another category's reward.", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun NewTodayTask(viewModel: GameViewModel, onAdded: () -> Unit) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var skill by rememberSaveable { mutableStateOf(Rules.SKILL_KEYS.first()) }
+    var xp by rememberSaveable { mutableStateOf("20") }
+    var save by rememberSaveable { mutableStateOf(false) }
+    SectionCard(title = "New task") {
+        OutlinedTextField(name, { name = it.take(100) }, label = { Text("What will you do?") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Rules.SKILL_KEYS.forEach { key -> FilterChip(selected = key == skill, onClick = { skill = key }, label = { Text(Rules.SKILL_LABELS.getValue(key)) }) }
+        }
+        NumberField(value = xp, onValueChange = { xp = it }, label = "Base XP")
+        Text("Suggested: small effort 10 · focused task 25 · substantial effort 50.", style = MaterialTheme.typography.bodySmall)
+        Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(save, { save = it }); Text("Save for future days") }
+        AppButton(onClick = { viewModel.run { state ->
+            val amount = xp.toIntOrNull() ?: 0
+            val result = GameEngine.addTodoTask(state, name, skill, amount)
+            if (result is Outcome.Applied) {
+                if (save) GameEngine.addActivity(state, skill, name, amount)
+                onAdded()
+            }
+            result
+        } }) { Text("Add task") }
+    }
+}

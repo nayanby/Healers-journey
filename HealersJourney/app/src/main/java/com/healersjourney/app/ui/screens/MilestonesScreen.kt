@@ -1,5 +1,6 @@
 package com.healersjourney.app.ui.screens
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,7 +33,6 @@ import com.healersjourney.app.ui.components.AppLayout
 import androidx.compose.ui.unit.dp
 import com.healersjourney.app.domain.Dates
 import com.healersjourney.app.domain.GameEngine
-import com.healersjourney.app.domain.GameState
 import com.healersjourney.app.domain.Milestone
 import com.healersjourney.app.ui.GameSnapshot
 import com.healersjourney.app.ui.GameViewModel
@@ -55,22 +55,23 @@ fun MilestonesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
                 TextButton(onClick = { adding = true }) {
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(AppLayout.icon))
                     Spacer(Modifier.width(4.dp))
-                    Text("New")
+                    Text("Add")
                 }
             }
         ) {
-            StatLine("Completed", "${milestones.count { it.completed }} / ${milestones.size}")
-            StatLine("Shown on dashboard", "${milestones.count { it.showOnMain }}")
+            if (milestones.isNotEmpty()) {
+                StatLine("Remembered", "${milestones.count { it.completed }}")
+            }
             Text(
-                "Real-life milestones do not grant XP. Tap one to open it.",
-                style = MaterialTheme.typography.bodySmall,
+                "Add moments and goals you want to remember, big or small. Mark them when they happen and look back on them here.",
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
         if (milestones.isEmpty()) {
             SectionCard(title = "Nothing yet") {
-                EmptyHint("Add your first milestone to start tracking real-life goals.")
+                EmptyHint("Add a milestone to remember something that matters to you.")
             }
         }
 
@@ -92,7 +93,7 @@ fun MilestonesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
                 Spacer(Modifier.height(AppLayout.contentGap))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Feature on Home", style = MaterialTheme.typography.bodyMedium)
+                        Text("Show on Home", style = MaterialTheme.typography.bodyMedium)
                     }
                     Switch(
                         checked = milestone.showOnMain,
@@ -144,13 +145,13 @@ private fun AddMilestoneDialog(onDismiss: () -> Unit, onAdd: (String, String) ->
     var desc by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New milestone") },
+        title = { Text("Add a milestone") },
         text = {
             Column {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Title") },
+                    label = { Text("What do you want to remember?") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

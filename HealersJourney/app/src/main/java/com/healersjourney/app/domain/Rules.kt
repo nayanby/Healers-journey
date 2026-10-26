@@ -4,14 +4,47 @@ object Rules {
 
     const val XP_PER_LEVEL = 500
 
+    /** Presentation aliases keep saved skill IDs and activity history compatible. */
+    fun activityLabel(skill: String, name: String): String = when (skill to name) {
+        "knowledgeXp" to "MCQ practice" -> "Read a book chapter"
+        "knowledgeXp" to "Revision" -> "Review today's notes"
+        "knowledgeXp" to "Make notes" -> "Write study notes"
+        "medicineXp" to "Case learned" -> "Finish a work task"
+        "medicineXp" to "Ward round" -> "Plan tomorrow's work"
+        "medicineXp" to "Read patient diagnosis" -> "Reply to work emails"
+        "medicineXp" to "Procedure learning" -> "Learn a work skill"
+        "strengthXp" to "Workout" -> "Complete a workout"
+        "strengthXp" to "Walk 30 minutes" -> "Walk for 30 minutes"
+        "strengthXp" to "Stretching" -> "Stretch for ten minutes"
+        "strengthXp" to "Yoga" -> "Do a yoga session"
+        "socialXp" to "Call family" -> "Call a family member"
+        "socialXp" to "Meet friend" -> "Meet up with a friend"
+        "socialXp" to "Celebrate birthday" -> "Celebrate someone's birthday"
+        "socialXp" to "Help someone" -> "Help a friend"
+        "socialXp" to "Important message" -> "Send a thoughtful message"
+        "hobbiesXp" to "Music practice" -> "Practice a musical instrument"
+        "hobbiesXp" to "Chess practice" -> "Play a chess game"
+        "hobbiesXp" to "Puzzle training" -> "Solve a puzzle"
+        "hobbiesXp" to "Hobby session" -> "Work on a hobby"
+        else -> name
+    }
+
+    fun categoryLabel(label: String): String = when (label) {
+        "Medicine" -> "Work"
+        "Knowledge", "Study" -> "Learning"
+        "Strength" -> "Fitness"
+        "Hobbies" -> "Creativity"
+        else -> label
+    }
+
     val SKILL_KEYS = listOf("knowledgeXp", "medicineXp", "strengthXp", "socialXp", "hobbiesXp")
 
     val SKILL_LABELS = mapOf(
-        "knowledgeXp" to "Knowledge",
-        "medicineXp" to "Medicine",
-        "strengthXp" to "Strength",
+        "knowledgeXp" to "Learning",
+        "medicineXp" to "Work",
+        "strengthXp" to "Fitness",
         "socialXp" to "Social",
-        "hobbiesXp" to "Hobbies"
+        "hobbiesXp" to "Creativity"
     )
 
     val SKILL_COLORS = mapOf(
@@ -88,10 +121,18 @@ object Rules {
 
     val CARE_RULES = listOf(
         CareRule("shower", "Shower", "🚿", 2, 1),
-        CareRule("haircut", "Haircut", "💈", 15, 5),
-        CareRule("shaving", "Shaving", "🪒", 7, 3),
-        CareRule("manscaping", "Manscaping", "🧴", 15, 5),
         CareRule("nails", "Nails", "✂️", 7, 1)
+    )
+
+    val CARE_SUGGESTIONS = listOf(
+        CareRule("teeth", "Brush teeth", "🪥", 1, 3),
+        CareRule("hair_wash", "Wash hair", "🧴", 3, 2),
+        CareRule("haircut", "Haircut", "💈", 30, 3),
+        CareRule("manscaping", "Grooming", "🧴", 14, 2),
+        CareRule("shaving", "Shave", "🪒", 7, 2),
+        CareRule("skincare", "Skincare", "🧴", 1, 2),
+        CareRule("sunscreen", "Sunscreen", "☀️", 1, 2),
+        CareRule("floss", "Floss", "🦷", 1, 2)
     )
 
     fun careAvatarKey(score: Int): String = when {
@@ -121,11 +162,11 @@ object Rules {
     val ATTRIBUTE_KEYS = listOf("knowledge", "medicine", "strength", "social", "hobbies")
 
     val ATTRIBUTE_LABELS = mapOf(
-        "knowledge" to "Knowledge",
-        "medicine" to "Medicine",
-        "strength" to "Strength",
+        "knowledge" to "Learning",
+        "medicine" to "Work",
+        "strength" to "Fitness",
         "social" to "Social",
-        "hobbies" to "Hobbies"
+        "hobbies" to "Creativity"
     )
 
     val ATTRIBUTE_COLORS = mapOf(

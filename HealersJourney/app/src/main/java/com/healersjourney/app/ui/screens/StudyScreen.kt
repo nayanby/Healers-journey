@@ -61,8 +61,8 @@ fun StudyScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
             )
             Spacer(Modifier.height(12.dp))
             StatLine("Week total", "${GameEngine.numText(summary.weeklyHours)} / 56 h")
-            StatLine("Study streak", "${GameEngine.studyStreak(state)} days", MaterialTheme.colorScheme.primary)
-            StatLine("Knowledge XP this week", "${summary.weeklyXp} / ${Rules.WEEKLY_TARGETS["knowledgeXp"]}")
+            StatLine("Learning streak", "${GameEngine.studyStreak(state)} days", MaterialTheme.colorScheme.primary)
+            StatLine("Learning XP this week", "${summary.weeklyXp} / ${Rules.WEEKLY_TARGETS["knowledgeXp"]}")
         }
 
         SectionCard(title = "This month", collapsible = true, initiallyExpanded = false) {
@@ -76,15 +76,15 @@ fun StudyScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
             MonthCalendar(cells = cells, offset = offset, color = color)
             Spacer(Modifier.height(12.dp))
             StatLine("Month hours", "${GameEngine.numText(summary.monthlyHours)} h")
-            StatLine("Month Knowledge XP", "${summary.monthlyXp}")
+            StatLine("Month Learning XP", "${summary.monthlyXp}")
         }
 
         SectionCard(title = "Lifetime", collapsible = true, initiallyExpanded = false) {
-            StatLine("Total study hours", "${GameEngine.numText(summary.lifetimeHours)} h")
-            StatLine("Days studied", "${summary.entries}")
+            StatLine("Total learning hours", "${GameEngine.numText(summary.lifetimeHours)} h")
+            StatLine("Days spent learning", "${summary.entries}")
             StatLine("Best single day", "${GameEngine.numText(summary.bestStudy)} h")
             StatLine("Average per day", "${GameEngine.numText(summary.averageStudy)} h")
-            StatLine("Lifetime Knowledge XP", "${summary.lifetimeXp}")
+            StatLine("Lifetime Learning XP", "${summary.lifetimeXp}")
 
         }
 
@@ -108,7 +108,7 @@ private fun StudyEntryCard(snapshot: GameSnapshot, viewModel: GameViewModel) {
         }
     }
 
-    SectionCard(title = "Study today") {
+    SectionCard(title = "Learning today") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = painterResource(Art.streakStudy),
@@ -148,7 +148,7 @@ private fun StudyEntryCard(snapshot: GameSnapshot, viewModel: GameViewModel) {
             Button(
                 onClick = { viewModel.run { GameEngine.addStudySession(it, hours.toDoubleOrNull() ?: 0.0) } },
                 enabled = remaining > 0
-            ) { Text("Log study") }
+            ) { Text("Log learning") }
         }
 
     }

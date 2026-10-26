@@ -9,10 +9,18 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/color_xp"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.HealersJourney">
+
+        <meta-data
+            android:name="com.google.android.gms.games.APP_ID"
+            android:value="@string/game_services_project_id" />
+        <meta-data
+            android:name="com.google.android.gms.games.SUPPRESS_GAME_PROFILE_CREATION"
+            android:value="true" />
 
         <activity
             android:name=".MainActivity"
@@ -33,7 +41,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="com.healersjourney.app"
+                    android:scheme="com.life.rpg"
                     android:path="/oauth2redirect" />
             </intent-filter>
         </activity>

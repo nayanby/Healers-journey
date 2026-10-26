@@ -138,7 +138,7 @@ fun FinanceScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
             } else {
                 entries.forEach { entry ->
                     Text(
-                        entry.text,
+                        com.healersjourney.app.domain.FriendlyLog.entry(entry, state),
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
                     )

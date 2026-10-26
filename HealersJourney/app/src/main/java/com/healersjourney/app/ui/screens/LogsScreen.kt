@@ -40,6 +40,7 @@ import com.healersjourney.app.domain.ActionEntry
 import com.healersjourney.app.domain.Dates
 import com.healersjourney.app.domain.GameEngine
 import com.healersjourney.app.domain.GameState
+import com.healersjourney.app.domain.FriendlyLog
 import com.healersjourney.app.domain.LogEntry
 import com.healersjourney.app.domain.Reports
 import com.healersjourney.app.domain.Rules
@@ -155,7 +156,7 @@ fun LogsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
         SectionCard(title = title) {
             StatLine("Activities logged", "${summary.actions.size}")
             StatLine("Total XP", "${summary.totalXp}", MaterialTheme.colorScheme.primary)
-            StatLine("Study", "${summary.studySessions} sessions • ${GameEngine.numText(summary.studyHours)} h")
+            StatLine("Learning", "${summary.studySessions} sessions • ${GameEngine.numText(summary.studyHours)} h")
             StatLine("Sleep", "${summary.sleepSessions} nights • ${GameEngine.numText(summary.sleepHours)} h")
             StatLine("Workouts", "${summary.workouts}")
             Spacer(Modifier.height(AppLayout.contentGap))
@@ -187,11 +188,11 @@ fun LogsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
         }
 
         SectionCard(title = "Activity log", collapsible = true, initiallyExpanded = false) {
-            LogList(state.taskLog, "task") { index -> undoLog(viewModel, "task", index) }
+            LogList(state.taskLog, state, "task") { index -> undoLog(viewModel, "task", index) }
         }
 
         SectionCard(title = "Finance log", collapsible = true, initiallyExpanded = false) {
-            LogList(state.financeLog, "finance") { index -> undoLog(viewModel, "finance", index) }
+            LogList(state.financeLog, state, "finance") { index -> undoLog(viewModel, "finance", index) }
         }
     }
 }
@@ -213,9 +214,9 @@ private fun ActionRow(action: ActionEntry, onUndo: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Text(action.name.ifEmpty { action.type }, style = MaterialTheme.typography.bodyMedium)
+            Text(FriendlyLog.action(action), style = MaterialTheme.typography.bodyMedium)
             Text(
-                Reports.actionLabel(action),
+                "${Dates.prettyCareDate(action.newCareLast ?: action.date)} · ${Rules.SKILL_LABELS[action.skill] ?: action.type.replaceFirstChar { it.uppercase() }}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -232,7 +233,7 @@ private fun ActionRow(action: ActionEntry, onUndo: () -> Unit) {
 }
 
 @Composable
-private fun LogList(entries: List<LogEntry>, kind: String, onDelete: (Int) -> Unit) {
+private fun LogList(entries: List<LogEntry>, state: GameState, kind: String, onDelete: (Int) -> Unit) {
     if (entries.isEmpty()) {
         EmptyHint(if (kind == "finance") "No finance updates yet." else "No activity log entries yet.")
         return
@@ -243,7 +244,7 @@ private fun LogList(entries: List<LogEntry>, kind: String, onDelete: (Int) -> Un
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                entry.text,
+                FriendlyLog.entry(entry, state),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.weight(1f)
             )

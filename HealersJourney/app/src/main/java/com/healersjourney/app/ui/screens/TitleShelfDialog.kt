@@ -1,5 +1,6 @@
 package com.healersjourney.app.ui.screens
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -47,12 +48,12 @@ fun TitleShelfDialog(level: Int, onDismiss: () -> Unit) {
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    "Every ${Rules.XP_PER_LEVEL} XP is a level. Your shield changes when you reach the level shown beside it.",
+                    "Every ${Rules.XP_PER_LEVEL} XP is a level. Each rank adds a visible upgrade: stronger materials, sun rays, laurels, wings, then a crown and celestial armor.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(12.dp))
-                Rules.TITLE_LEVELS.forEach { (minLevel, title) ->
+                Rules.TITLE_LEVELS.forEachIndexed { tier, (minLevel, title) ->
                     val active = title == currentTitle
                     val reached = level >= minLevel
                     Row(
@@ -69,8 +70,8 @@ fun TitleShelfDialog(level: Int, onDismiss: () -> Unit) {
                         Image(
                             painter = painterResource(Art.badgeFor(title)),
                             contentDescription = "$title shield",
-                            modifier = Modifier.size(44.dp),
-                            alpha = if (reached) 1f else 0.4f
+                            modifier = Modifier.size(64.dp),
+                            alpha = if (reached) 1f else 0.78f
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
@@ -81,8 +82,8 @@ fun TitleShelfDialog(level: Int, onDismiss: () -> Unit) {
                                 else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                if (reached) "Level $minLevel+"
-                                else "Level $minLevel+ • ${(minLevel - level) * Rules.XP_PER_LEVEL} XP to go",
+                                if (reached) "Tier ${tier + 1} · Level $minLevel+"
+                                else "Tier ${tier + 1} · Level $minLevel+ • ${(minLevel - level) * Rules.XP_PER_LEVEL} XP to go",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

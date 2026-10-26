@@ -1,0 +1,46 @@
+@Composable
+@NonSkippableComposable
+fun WorldCharacter(state: GameState, modifier: Modifier = Modifier, previewScore: Int? = null, onTap: (() -> Unit)? = null) {
+    var clock by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(60_000); clock = System.currentTimeMillis() } }
+    val score = previewScore ?: clock.let { GameEngine.personalCareStats(state).score }
+    val key = Rules.careAvatarKey(score)
+    val grime = when(key) { "pristine" -> 0; "grimy" -> 1; "dirty" -> 2; else -> 3 }
+    val outfit = state.worldEquipment["outfit"] ?: "traveler"
+    Box(if (onTap != null) modifier.clickable(role = Role.Button, onClick = onTap) else modifier) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawOval(Color.Black.copy(alpha=.16f), Offset(size.width*.32f,size.height*.93f), Size(size.width*.38f,size.height*.035f))
+        }
+        Image(gameArtPainter(GameArt.avatar(outfit)), "Your character: $key, ${WorldRules.items.firstOrNull { it.id == outfit }?.name ?: "Traveler"}",
+            Modifier.fillMaxSize(), colorFilter = if (grime == 0) null else ColorFilter.tint(Color(0xFFB2A28B).copy(alpha=.13f*grime), BlendMode.SrcAtop))
+        Canvas(Modifier.fillMaxSize()) {
+            val u = size.minDimension / 128f
+            if (grime > 0) {
+                val patches = listOf(.42f to .4f, .56f to .54f, .47f to .72f, .59f to .84f, .36f to .57f, .58f to .22f,
+                    .45f to .31f, .51f to .63f, .63f to .57f)
+                patches.take(grime*3).forEachIndexed { i, (x,y) ->
+                    val mud = Color(0xFF62513C).copy(alpha=.32f + grime*.1f)
+                    val at = Offset((size.width*x/u).toInt()*u,(size.height*y/u).toInt()*u)
+                    drawRect(mud, at, Size((3+i%3)*u,2*u))
+                    drawRect(mud, at+Offset(u,2*u), Size(3*u,2*u))
+                }
+                if (grime == 3) repeat(3) { i ->
+                    val at = Offset(size.width*(.27f+i*.22f),size.height*(.22f+(i%2)*.12f))
+                    drawRect(Color(0xFF43493B),at,Size(2*u,2*u))
+                    drawRect(Color(0xFFD2DEC5).copy(alpha=.8f),at-Offset(u,u),Size(2*u,u))
+                }
+            } else {
+                listOf(.28f to .25f,.71f to .43f).forEach { (x,y) ->
+                    val at=Offset(size.width*x,size.height*y)
+                    drawRect(Color(0xFFFFE9A1),at,Size(u,5*u))
+                    drawRect(Color(0xFFFFE9A1),at+Offset(-2*u,2*u),Size(5*u,u))
+                }
+            }
+        }
+        state.worldEquipment["companion"]?.takeIf { it != "none" }?.let {
+            CompanionArt(it, Modifier.size(52.dp).align(Alignment.BottomEnd))
+        }
+        if (state.actionHistory.firstOrNull()?.type == "sleep") Text("z Z z", Modifier.align(Alignment.TopEnd),
+            color = Color(0xFF495E91), style = MaterialTheme.typography.titleSmall)
+    }
+}
