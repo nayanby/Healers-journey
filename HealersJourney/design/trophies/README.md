@@ -14,7 +14,9 @@ Create ONE new transparent PNG trophy icon for CATEGORY in the exact same art fa
 
 | Category | SUBJECT |
 | --- | --- |
-| Work | a chunky VIOLET PROFESSIONAL BRIEFCASE, with gold clasps and handle |
+| Work | violet laptop with a gold check mark and an ivory checklist (revised) |
 | Fitness | a large EMERALD GREEN DUMBBELL, with gold bar and sturdy dimensional round weights |
-| Social | two warm CORAL AND ROSE stylized friendly people busts together, as a symbol of connection |
+| Social | overlapping coral and turquoise chat bubbles with a heart and three dots (revised) |
 | Creativity | a rich MAGENTA ARTIST PALETTE with three broad colorful paint dabs and one diagonal gold-handled paintbrush |
+
+The replacement Work and Social artwork and their matching category icons were created with the prompts in `social-work-prompts.json`. Original category icon PNGs are preserved in `design/category-icons/`; run `tools/export_category_pngs.py` after exporting trophies to package them.
