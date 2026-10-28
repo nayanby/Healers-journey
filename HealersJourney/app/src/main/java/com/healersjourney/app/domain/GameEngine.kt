@@ -560,6 +560,7 @@ object GameEngine {
             state.todoDate = today
             state.todoViewOffset = 0
         }
+        Planning.materialize(state, today, state.todoTasks)
     }
 
     fun todoDateForOffset(offset: Int): String = Dates.addDays(Dates.gameDayKey(), offset)
@@ -568,6 +569,9 @@ object GameEngine {
         ensureTodoTasks(state)
         val offset = state.todoViewOffset
         val key = todoDateForOffset(offset)
+        if (key >= state.todoDate && offset != 0) {
+            Planning.materialize(state, key, state.todoHistory.getOrPut(key) { mutableListOf() })
+        }
         if (offset == 0) return TodoView(key, state.todoTasks, true)
         val existing = state.todoHistory[key]
         if (existing != null) return TodoView(key, existing, false)
@@ -615,21 +619,37 @@ object GameEngine {
         return Outcome.Applied
     }
 
+    fun updateTodoTask(state: GameState, id: String, name: String, skill: String, xp: Int): Outcome {
+        val tasks = getTodoListForView(state, true).list
+        val index = tasks.indexOfFirst { it.id == id }
+        if (index < 0) return Outcome.Failure("Task not found.")
+        if (tasks[index].completed) return Outcome.Failure("Undo this task before editing it.")
+        if (name.isBlank() || skill !in Rules.SKILL_KEYS || xp !in 1..10000) return Outcome.Failure("Enter a task name, category and 1–10,000 base XP.")
+        if (tasks.any { it.id != id && it.skill == skill && it.name.equals(name.trim(), true) }) return Outcome.Failure("This task is already on your day.")
+        tasks[index] = tasks[index].copy(name = name.trim().take(100), skill = skill, xp = xp)
+        return Outcome.Applied
+    }
+
     fun completeTodoTask(state: GameState, id: String): Outcome {
         ensureTodoTasks(state)
         val view = getTodoListForView(state, true)
-        val index = view.list.indexOfFirst { it.id == id }
+        return completePlannedTask(state, view.list, id)
+    }
+
+    fun completePlannedTask(state: GameState, tasks: MutableList<TodoTask>, id: String): Outcome {
+        val index = tasks.indexOfFirst { it.id == id }
         if (index < 0) return Outcome.Failure("Task not found.")
-        val task = view.list[index]
-        if (view.key > Dates.gameDayKey()) return Outcome.Failure("Future tasks can be completed on their planned day.")
+        val task = tasks[index]
+        if (task.date > Dates.gameDayKey()) return Outcome.Failure("Future tasks can be completed on their planned day.")
         if (task.completed) return Outcome.Applied
-        view.list[index] = task.copy(completed = true, completedAt = Dates.nowText())
+        tasks[index] = task.copy(completed = true, completedAt = Dates.nowText())
+        if (state.focusSession?.taskId == id) state.focusSession = null
         val action = addXp(
             state,
             task.skill.ifEmpty { "knowledgeXp" },
             task.xp,
             task.name.ifEmpty { "To-do task" },
-            listOf(task.date, view.key, Dates.gameDayKey()).first { it.isNotEmpty() }
+            task.date.ifEmpty { Dates.gameDayKey() }
         )
         val actionIndex = state.actionHistory.indexOfFirst { it.id == action.id }
         state.actionHistory[actionIndex] = action.copy(activityId = task.id)
@@ -641,6 +661,7 @@ object GameEngine {
         val view = getTodoListForView(state, true)
         val index = view.list.indexOfFirst { it.id == id }
         if (index < 0) return Outcome.Failure("Task not found.")
+        if (state.focusSession?.taskId == id) state.focusSession = null
         val action = state.actionHistory.firstOrNull { it.activityId == id }
         if (action != null) {
             undoActionById(state, action.id)

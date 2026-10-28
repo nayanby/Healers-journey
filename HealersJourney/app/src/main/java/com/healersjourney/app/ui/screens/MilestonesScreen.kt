@@ -49,6 +49,7 @@ fun MilestonesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
     var detail by remember { mutableStateOf<Milestone?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
+        PersonalGoalsSection(snapshot, viewModel)
         SectionCard(
             title = "Milestones",
             trailing = {

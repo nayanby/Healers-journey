@@ -77,6 +77,10 @@ data class RemovedActivity(
 )
 
 class GameState {
+    val personalGoals: MutableList<PersonalGoal> = mutableListOf()
+    val recurringTasks: MutableList<RecurringTask> = mutableListOf()
+    val scheduledOccurrences: MutableSet<String> = mutableSetOf()
+    var focusSession: FocusSession? = null
     var playerName: String = "Nayan"
     var onboardingCompleted: Boolean = false
     var totalXp: Int = 0

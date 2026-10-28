@@ -41,7 +41,7 @@ fun ExploreScreen(snapshot: GameSnapshot, viewModel: GameViewModel, onOpen: (Des
         JourneyHeading("Your story so far", "Look back at what you've done and plan ahead.")
         ExploreGroup("Your journey", listOf(
             Triple(Destination.Logs, R.drawable.color_logs, "Activity history & insights"),
-            Triple(Destination.Milestones, R.drawable.color_milestone, "Personal milestones"),
+            Triple(Destination.Milestones, R.drawable.color_milestone, "Goals & milestones"),
             Triple(Destination.Achievements, R.drawable.color_achievement, "Achievements")
         ), onOpen)
         ExploreGroup("More tools", listOf(

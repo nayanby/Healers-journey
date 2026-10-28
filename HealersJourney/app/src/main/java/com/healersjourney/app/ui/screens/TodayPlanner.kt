@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -83,6 +84,12 @@ private fun savedChoices(state: GameState, category: String, query: String): Pai
 fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: String? = null,
                screenScroll: ScrollState, scrollViewportTopPx: Float, onOpenSleep: () -> Unit = {}) {
     val state = snapshot.state
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.refreshPlanning()
+            kotlinx.coroutines.delay(30_000)
+        }
+    }
     val view = remember(snapshot.revision) { GameEngine.getTodoListForView(state) }
     var adding by rememberSaveable(view.key, initialSkill) { mutableStateOf(initialSkill in Rules.SKILL_KEYS) }
     var mode by rememberSaveable { mutableStateOf("saved") }
@@ -94,10 +101,14 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
     var selected by remember { mutableStateOf<Pair<String, ActivityDef>?>(null) }
     var newPreset by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<TodoTask?>(null) }
+    var focusTask by remember { mutableStateOf<TodoTask?>(null) }
+    var editTask by remember { mutableStateOf<TodoTask?>(null) }
+    focusTask?.let { StartFocusDialog(it, viewModel) { focusTask = null } }
+    editTask?.let { task -> EditPlannedTaskDialog(task, viewModel, onRemove = { editTask = null; removing = task }) { editTask = null } }
     selected?.let { (skill, activity) -> PresetEditorDialog(skill, snapshot, viewModel, activity) { selected = null } }
     if (newPreset) PresetEditorDialog(category.takeIf { it in Rules.SKILL_KEYS } ?: Rules.SKILL_KEYS.first(), snapshot, viewModel) { newPreset = false }
     removing?.let { task -> AlertDialog(onDismissRequest = { removing = null }, title = { Text("Remove ${task.name}?") },
-        text = { Text(if (task.completed) "This will also remove the XP and badge earned from this task." else "This task will be removed from your day.") },
+        text = { Text(if (task.completed) "This will also remove the XP, coins and trophy earned from this task." else "This task will be removed from your day.") },
         confirmButton = { AppTextButton(onClick = { viewModel.run { GameEngine.deleteTodoTask(it, task.id) }; removing = null }) { Text("Remove") } },
         dismissButton = { AppTextButton(onClick = { removing = null }) { Text("Keep") } }) }
     Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
@@ -134,12 +145,13 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
             }, label = "Day shelf slide") { day ->
             DayShowcase(state, day, snapshot.revision)
         }
+        FocusCard(snapshot, viewModel)
         if (view.list.isEmpty()) EmptyHint("Your day, your pace. Add a task or choose an activity you've saved.")
         else CompactTodayCard(title = "Today's tasks") {
             view.list.sortedBy { it.completed }.forEach { task ->
                 val earnedCoins = state.actionHistory.firstOrNull { it.activityId == task.id }
                     ?.let { if (it.id in state.coinAwardedActionIds) 10 else 0 } ?: 0
-                Row(Modifier.fillMaxWidth().height(60.dp).combinedClickable(onClick = {}, onLongClickLabel = "Remove task", onLongClick = { removing = task }).padding(vertical = 3.dp),
+                Row(Modifier.fillMaxWidth().height(60.dp).combinedClickable(onClick = { editTask = task }, onLongClickLabel = "Edit or remove task", onLongClick = { editTask = task }).padding(vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Image(gameArtPainter(Art.skillIcon(task.skill)), null, Modifier.size(26.dp))
                     Column(Modifier.weight(1f)) {
@@ -152,8 +164,13 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
                             style = MaterialTheme.typography.labelSmall, maxLines=1)
                     }
                     if (task.completed) AppTextButton(onClick = { viewModel.run { GameEngine.undoTodoTask(it, task.id) } }) { Text("Undo") }
-                    else AppTonalButton(onClick = { viewModel.run { GameEngine.completeTodoTask(it, task.id) } }) {
+                    else {
+                    if (view.viewingToday && state.focusSession == null) IconButton(onClick = { focusTask = task }, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.Timer, "Focus on ${task.name}", modifier = Modifier.size(20.dp))
+                    }
+                    AppTonalButton(onClick = { viewModel.run { GameEngine.completeTodoTask(it, task.id) } }) {
                         Text("Done")
+                    }
                     }
                 }
             }
@@ -226,6 +243,8 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
             }
         }
         }
+        RecurringTasksSection(snapshot, viewModel)
+        PersonalGoalsSection(snapshot, viewModel, compact = true)
         SectionCard(title = "How XP works", collapsible = true, initiallyExpanded = false) {
             Text("Each category earns its first 200 base XP at full value per game day, its next 200 at 50%, then 25%. Learning uses 50 base XP/hour and shares this calculation. The day resets at 5 AM. Neglected categories never reduce another category's reward.", style = MaterialTheme.typography.bodySmall)
         }
@@ -238,6 +257,8 @@ private fun NewTodayTask(viewModel: GameViewModel, onAdded: () -> Unit) {
     var skill by rememberSaveable { mutableStateOf(Rules.SKILL_KEYS.first()) }
     var xp by rememberSaveable { mutableStateOf("20") }
     var save by rememberSaveable { mutableStateOf(false) }
+    var repeat by rememberSaveable { mutableStateOf(false) }
+    var days by remember { mutableStateOf(setOf(1, 2, 3, 4, 5)) }
     SectionCard(title = "New task") {
         OutlinedTextField(name, { name = it.take(100) }, label = { Text("What will you do?") }, singleLine = true, modifier = Modifier.fillMaxWidth())
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -246,11 +267,14 @@ private fun NewTodayTask(viewModel: GameViewModel, onAdded: () -> Unit) {
         NumberField(value = xp, onValueChange = { xp = it }, label = "Base XP")
         Text("Suggested: small effort 10 · focused task 25 · substantial effort 50.", style = MaterialTheme.typography.bodySmall)
         Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(save, { save = it }); Text("Save for future days") }
+        Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(repeat, { repeat = it }); Text("Repeat on weekdays") }
+        if (repeat) WeekdayPicker(days) { days = it }
         AppButton(onClick = { viewModel.run { state ->
             val amount = xp.toIntOrNull() ?: 0
-            val result = GameEngine.addTodoTask(state, name, skill, amount)
+            val result = if (repeat && days.isEmpty()) Outcome.Failure("Choose at least one weekday.") else GameEngine.addTodoTask(state, name, skill, amount)
             if (result is Outcome.Applied) {
                 if (save) GameEngine.addActivity(state, skill, name, amount)
+                if (repeat) Planning.saveRecurring(state, null, name, skill, amount, days)
                 onAdded()
             }
             result

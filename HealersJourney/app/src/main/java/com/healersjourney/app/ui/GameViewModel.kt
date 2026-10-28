@@ -105,6 +105,15 @@ class GameViewModel(
         _message.value = text
     }
 
+    fun refreshPlanning() {
+        val today = com.healersjourney.app.domain.Dates.gameDayKey()
+        val needsRefresh = current.todoDate != today || current.recurringTasks.any {
+            today >= it.start && com.healersjourney.app.domain.Planning.weekday(today) in it.weekdays &&
+                com.healersjourney.app.domain.Planning.occurrenceId(it, today) !in current.scheduledOccurrences
+        }
+        if (needsRefresh) runQuiet { GameEngine.ensureTodoTasks(it) }
+    }
+
     /** Applies a mutation that can be rejected, surfacing the rejection as a message. */
     fun run(block: (GameState) -> Outcome) {
         val xpBefore = current.totalXp

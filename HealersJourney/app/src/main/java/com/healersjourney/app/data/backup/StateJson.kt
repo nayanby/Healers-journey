@@ -24,14 +24,14 @@ object StateJson {
 
     const val APP_NAME = "Life RPG"
     const val STORAGE_KEY = "healersJourneyLifeRpgV1"
-    const val BACKUP_VERSION = 38
+    const val BACKUP_VERSION = 39
     const val BACKUP_TYPE = "complete-local-storage-json"
 
     /** Fields added after the original Room tables; kept in the same database transaction. */
     fun encodeLocalExtras(state: GameState): JSONObject {
         val all = encode(state)
         val extras = JSONObject()
-        listOf("onboardingCompleted", "worldUnlocks", "worldEquipment", "coins", "coinRewardDays", "coinAwardedActionIds", "coinDebt", "adventureClaims", "dailyQuestDate", "dailyQuestIds",
+        listOf("planning", "onboardingCompleted", "worldUnlocks", "worldEquipment", "coins", "coinRewardDays", "coinAwardedActionIds", "coinDebt", "adventureClaims", "dailyQuestDate", "dailyQuestIds",
             "soundEnabled", "hapticsEnabled", "careRoutines", "careDefaultsVersion").forEach { extras.put(it, all.get(it)) }
         extras.put("actionActivityIds", JSONObject().apply {
             state.actionHistory.forEach { action -> action.activityId?.let { put(action.id, it) } }
@@ -42,6 +42,7 @@ object StateJson {
     fun restoreLocalExtras(state: GameState, text: String) {
         val extras = JSONObject(text)
         val saved = decode(text)
+        PlanningJson.restore(state, extras.optJSONObject("planning"))
         state.onboardingCompleted = saved.onboardingCompleted
         state.worldUnlocks.addAll(saved.worldUnlocks)
         state.worldEquipment.putAll(saved.worldEquipment)
@@ -81,6 +82,7 @@ object StateJson {
     }
 
     fun encode(state: GameState): JSONObject = JSONObject()
+        .put("planning", PlanningJson.encode(state))
         .put("playerName", state.playerName)
         .put("onboardingCompleted", state.onboardingCompleted)
         .put("worldUnlocks", JSONArray(state.worldUnlocks.toList()))
@@ -275,6 +277,7 @@ object StateJson {
 
     private fun decodeState(json: JSONObject): GameState {
         val state = GameState()
+        PlanningJson.restore(state, json.optJSONObject("planning"))
         state.playerName = json.optString("playerName", state.playerName)
         // Existing saves predate onboarding and should open without an extra setup step.
         state.onboardingCompleted = json.optBoolean("onboardingCompleted", true)
