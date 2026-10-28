@@ -48,7 +48,7 @@ fun PersonalGoalsSection(snapshot: GameSnapshot, viewModel: GameViewModel, compa
             val earned = count >= goal.target
             Row(Modifier.fillMaxWidth().clickable { editing = goal }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                TrophyModel(goal.skill, Modifier.size(if (earned) 64.dp else 52.dp).clickable(enabled = earned) { commemorative = goal },
+                TrophyImage(goal.skill, Modifier.size(if (earned) 64.dp else 52.dp).clickable(enabled = earned) { commemorative = goal },
                     description = if (earned) "View earned goal trophy" else "Goal trophy in progress", alpha = if (earned) 1f else .55f)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(goal.title, style = MaterialTheme.typography.titleSmall)
@@ -68,8 +68,7 @@ fun PersonalGoalsSection(snapshot: GameSnapshot, viewModel: GameViewModel, compa
         val reached = Planning.goalActions(state, goal).sortedBy { it.ts }.getOrNull(goal.target - 1)
         AlertDialog(onDismissRequest = { commemorative = null }, title = { Text(goal.title) }, text = {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                TrophyModel(goal.skill, Modifier.size(200.dp), interactive = true, description = "Commemorative goal trophy")
-                Text("Drag to rotate", style = MaterialTheme.typography.labelSmall)
+                TrophyImage(goal.skill, Modifier.size(200.dp), description = "Commemorative goal trophy")
                 Text("${goal.target} completions · ${goal.start.take(7)}", style = MaterialTheme.typography.titleMedium)
                 Text(reached?.let { "Earned ${Dates.prettyCareDate(it.date)}" } ?: "Keep going to earn this trophy.")
             }

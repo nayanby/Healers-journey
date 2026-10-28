@@ -62,14 +62,14 @@ fun DayShowcase(state: GameState, day: String, revision: Int) {
                         var appeared by remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) { appeared = true }
                         val scale by animateFloatAsState(if(appeared) 1f else .25f, label = "Badge arrival")
-                        val itemW = w * .24f
-                        val itemH = h * .38f
-                        val x = w * (.21f + col*.195f) - itemW/2
-                        val y = h * (if(row == 0) .08f else .46f)
-                        Box(Modifier.offset(x=x,y=y).size(itemW,itemH).clickable(onClickLabel = "View earned trophy") { selectedId = action.id }
+                        val itemW = w * .22f
+                        val x = w * (.20f + col*.20f) - itemW/2
+                        // PNGs share the same opaque base line, resting on each shelf surface.
+                        val y = h * (if(row == 0) .48f else .79f) - itemW * (496f/512f)
+                        Box(Modifier.offset(x=x,y=y).size(itemW).clickable(onClickLabel = "View earned trophy") { selectedId = action.id }
                             .graphicsLayer { scaleX=scale;scaleY=scale;transformOrigin=androidx.compose.ui.graphics.TransformOrigin(.5f,1f) },
                             contentAlignment = Alignment.Center) {
-                            TrophyModel(action.skill, Modifier.fillMaxSize(),
+                            TrophyImage(action.skill, Modifier.fillMaxSize(),
                                 description = "${DailyShowcase.collection(action.skill)?.title} trophy: ${action.originalName ?: action.name}")
                         }
                     }

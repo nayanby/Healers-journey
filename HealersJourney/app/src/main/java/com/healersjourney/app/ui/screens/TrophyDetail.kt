@@ -21,8 +21,7 @@ fun TrophyDetail(state: GameState, action: ActionEntry, onDismiss: () -> Unit) {
     val count = state.actionHistory.count { it.skill == action.skill && Rules.activityLabel(it.skill, it.originalName ?: it.name).equals(label, true) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(label) }, text = {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            TrophyModel(action.skill, Modifier.size(200.dp), interactive = true, description = "${Rules.SKILL_LABELS[action.skill]} earned trophy")
-            Text("Drag to rotate", style = MaterialTheme.typography.labelSmall)
+            TrophyImage(action.skill, Modifier.size(200.dp), description = "${Rules.SKILL_LABELS[action.skill]} earned trophy")
             Text(Rules.SKILL_LABELS[action.skill] ?: "Activity", style = MaterialTheme.typography.titleMedium)
             Text("Completed ${Dates.prettyCareDate(action.date)}", style = MaterialTheme.typography.bodyMedium)
             Text("${action.xp} XP · ${if (action.id in state.coinAwardedActionIds) 10 else 0} coins", style = MaterialTheme.typography.titleMedium)
@@ -50,7 +49,7 @@ fun TrophyCollectionDialog(state: GameState, onDismiss: () -> Unit) {
                 items(entries, key = { it.id }) { action ->
                     Row(Modifier.fillMaxWidth().clickable { selected = action }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TrophyModel(action.skill, Modifier.size(60.dp))
+                        TrophyImage(action.skill, Modifier.size(60.dp))
                         Column(Modifier.weight(1f)) {
                             Text(Rules.activityLabel(action.skill, action.originalName ?: action.name), style = MaterialTheme.typography.bodyMedium)
                             Text("${Dates.prettyCareDate(action.date)} · ${action.xp} XP", style = MaterialTheme.typography.labelSmall)
