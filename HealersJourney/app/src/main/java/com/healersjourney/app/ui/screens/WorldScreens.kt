@@ -114,6 +114,10 @@ private fun growthValues(state: GameState, range: GrowthRange): List<Int> {
 
 @Composable
 private fun GrowthRadar(state: GameState, revision: Int) {
+    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
+    selectedCategory?.let { skill ->
+        CategoryDescriptionDialog(skill) { selectedCategory = null }
+    }
     val skills = Rules.SKILL_KEYS
     val ranges = GrowthRange.entries
     val pager = rememberPagerState(pageCount = { ranges.size })
@@ -177,7 +181,9 @@ private fun GrowthRadar(state: GameState, revision: Int) {
                     val angle = angles[index]
                     val x = maxWidth / 2 + 126.dp * cos(angle).toFloat() - 40.dp
                     val y = if (index == 0) 4.dp else 175.dp + 126.dp * sin(angle).toFloat() - 16.dp
-                    Column(Modifier.offset(x = x, y = y).width(80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.offset(x = x, y = y).width(80.dp).clip(RoundedCornerShape(14.dp))
+                        .clickable(role = Role.Button, onClickLabel = "About ${Rules.SKILL_LABELS[skill]}") { selectedCategory = skill },
+                        horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(Modifier.size(42.dp).clip(CircleShape).background(Color(0xFF294B5B)), contentAlignment = Alignment.Center) {
                             Image(gameArtPainter(Art.skillIcon(skill), 128), null, Modifier.size(32.dp))
                         }
@@ -200,6 +206,29 @@ private fun GrowthRadar(state: GameState, revision: Int) {
             }
         }
     }
+}
+
+@Composable
+private fun CategoryDescriptionDialog(skill: String, onDismiss: () -> Unit) {
+    val description = CategoryGuide.forSkill(skill) ?: return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Image(gameArtPainter(Art.skillIcon(skill), 256), null, Modifier.size(76.dp)) },
+        title = { Text(Rules.SKILL_LABELS[skill].orEmpty()) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(description.summary, style = MaterialTheme.typography.bodyLarge)
+                Text("Things you can log", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                description.examples.forEach { example ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("•", color = MaterialTheme.colorScheme.primary)
+                        Text(example, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        },
+        confirmButton = { AppTextButton(onClick = onDismiss) { Text("Got it") } }
+    )
 }
 
 @Composable

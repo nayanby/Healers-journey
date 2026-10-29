@@ -6,7 +6,7 @@ The Kotlin / Jetpack Compose project lives in `HealersJourney/`. Its four main t
 
 ## Current experience
 
-- Home centers your character and companion against the equipped backdrop. Swipe the five-category XP graph through Day, Week, Month, Year and Lifetime. Tap your character to open Care.
+- Home centers your character and companion against the equipped backdrop. Swipe the five-category XP graph through Day, Week, Month, Year and Lifetime. Tap any category icon or label on the graph for its description and activity examples. Social keeps its name and includes household errands and responsibilities alongside relationships. Tap your character to open Care.
 - Today lets you plan tasks from saved activities or create new ones. Completed tasks remain visible with a strike-through. Undoing or removing a completed task reverses its linked XP and coin rewards. Long-press saved activities to edit or delete them.
 - A dated pixel shelf displays five category-specific trophy PNGs, today's earned coins and category bonus goals. Tap a trophy for its activity, date, XP and coins, or browse the full collection. Date navigation slides the shelf between days.
 - Today supports optional focus sessions with pause, resume and cancellation. Timers persist across navigation and restarts; once time is up, finishing the session completes its linked task with the usual rewards exactly once. No background alarm is scheduled.
