@@ -14,6 +14,27 @@ data class FocusSession(val taskId: String, val day: String, val durationMs: Lon
 
 /** Progress always comes from actual history, so undo and deletion stay consistent. */
 object Planning {
+    fun goalCheckInId(goalId: String, day: String) = "goal-checkin:$goalId:$day"
+
+    fun checkInGoal(state: GameState, goalId: String): Outcome {
+        val goal = state.personalGoals.firstOrNull { it.id == goalId } ?: return Outcome.Failure("Goal not found.")
+        val day = Dates.gameDayKey()
+        if (day !in goal.start..goal.end) return Outcome.Failure("This goal isn't active today.")
+        if (state.actionHistory.any { it.activityId == goalCheckInId(goalId, day) } || goalActions(state, goal).any { it.date == day }) return Outcome.Applied
+        val action = GameEngine.addXp(state, goal.skill, 0, goal.activity.ifBlank { goal.title }, day)
+        val index = state.actionHistory.indexOfFirst { it.id == action.id }
+        state.actionHistory[index] = action.copy(activityId = goalCheckInId(goalId, day))
+        return Outcome.Applied
+    }
+
+    fun undoGoalCheckIn(state: GameState, goalId: String): Outcome {
+        val id = goalCheckInId(goalId, Dates.gameDayKey())
+        val action = state.actionHistory.firstOrNull { it.activityId == id } ?: return Outcome.Failure("No check-in to undo today.")
+        GameEngine.undoActionById(state, action.id)
+        state.taskLog.removeAll { it.actionId == action.id }
+        return Outcome.Applied
+    }
+
     fun goalActions(state: GameState, goal: PersonalGoal): List<ActionEntry> = state.actionHistory.filter {
         DailyShowcase.collection(it.skill) != null && it.type in setOf("activity", "study", "hobby", "workout", "other") &&
             it.date >= goal.start && it.date <= goal.end && it.skill == goal.skill &&
@@ -46,8 +67,8 @@ object Planning {
     }
 
     fun saveRecurring(state: GameState, id: String?, name: String, skill: String, xp: Int, days: Set<Int>): Outcome {
-        if (name.isBlank() || skill !in Rules.SKILL_KEYS || xp !in 1..10000 || days.isEmpty() || days.any { it !in 1..7 })
-            return Outcome.Failure("Enter a task, choose weekdays and use 1–10,000 base XP.")
+        if (name.isBlank() || skill !in Rules.SKILL_KEYS || xp !in 0..10000 || days.isEmpty() || days.any { it !in 1..7 })
+            return Outcome.Failure("Enter a task, choose weekdays and use 0–10,000 base XP.")
         val rule = RecurringTask(id ?: Ids.make("repeat"), name.trim().take(100), skill, xp, days, Dates.gameDayKey())
         removeRecurring(state, rule.id)
         state.recurringTasks.add(rule)

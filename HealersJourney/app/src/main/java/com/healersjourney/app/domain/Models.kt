@@ -77,6 +77,7 @@ data class RemovedActivity(
 )
 
 class GameState {
+    val thoughts: MutableList<ThoughtEntry> = mutableListOf()
     val personalGoals: MutableList<PersonalGoal> = mutableListOf()
     val recurringTasks: MutableList<RecurringTask> = mutableListOf()
     val scheduledOccurrences: MutableSet<String> = mutableSetOf()

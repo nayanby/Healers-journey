@@ -51,9 +51,9 @@ private fun CompactTodayCard(title: String, content: @Composable ColumnScope.() 
 }
 
 private fun savedChoices(state: GameState, category: String, query: String): Pair<List<SavedChoice>, List<SavedChoice>> {
-    val countsById = state.actionHistory.asSequence().filter { it.xp > 0 && it.activityId != null }
+    val countsById = state.actionHistory.asSequence().filter { it.skill in Rules.SKILL_KEYS && it.activityId != null }
         .groupingBy { it.skill to it.activityId }.eachCount()
-    val countsByName = state.actionHistory.asSequence().filter { it.xp > 0 }
+    val countsByName = state.actionHistory.asSequence().filter { it.skill in Rules.SKILL_KEYS }
         .groupingBy { it.skill to Rules.activityLabel(it.skill, it.name).trim().lowercase() }.eachCount()
     val search = query.trim()
     val rankedByCategory = Rules.SKILL_KEYS.withIndex()
@@ -106,7 +106,7 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
     focusTask?.let { StartFocusDialog(it, viewModel) { focusTask = null } }
     editTask?.let { task -> EditPlannedTaskDialog(task, viewModel, onRemove = { editTask = null; removing = task }) { editTask = null } }
     selected?.let { (skill, activity) -> PresetEditorDialog(skill, snapshot, viewModel, activity) { selected = null } }
-    if (newPreset) PresetEditorDialog(category.takeIf { it in Rules.SKILL_KEYS } ?: Rules.SKILL_KEYS.first(), snapshot, viewModel) { newPreset = false }
+    if (newPreset) PresetEditorDialog(category.takeIf { it in Rules.SKILL_KEYS } ?: Rules.SKILL_KEYS.first(), snapshot, viewModel, initialName = query.trim()) { newPreset = false }
     removing?.let { task -> AlertDialog(onDismissRequest = { removing = null }, title = { Text("Remove ${task.name}?") },
         text = { Text(if (task.completed) "This will also remove the XP, coins and trophy earned from this task." else "This task will be removed from your day.") },
         confirmButton = { AppTextButton(onClick = { viewModel.run { GameEngine.deleteTodoTask(it, task.id) }; removing = null }) { Text("Remove") } },
@@ -210,7 +210,7 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
                 FilterChip(selected = mode == "saved", onClick = { mode = "saved" }, label = { Text("Saved activities") })
                 FilterChip(selected = mode == "new", onClick = { mode = "new" }, label = { Text("New task") })
             }
-            if (mode == "new") NewTodayTask(viewModel) { adding = false }
+            if (mode == "new") NewTodayTask(viewModel, query.trim(), category) { adding = false }
             else CompactTodayCard(title = "Find an activity") {
                 OutlinedTextField(query, { query = it }, label = { Text("Search saved activities") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -252,9 +252,9 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
 }
 
 @Composable
-private fun NewTodayTask(viewModel: GameViewModel, onAdded: () -> Unit) {
-    var name by rememberSaveable { mutableStateOf("") }
-    var skill by rememberSaveable { mutableStateOf(Rules.SKILL_KEYS.first()) }
+private fun NewTodayTask(viewModel: GameViewModel, initialName: String, initialSkill: String, onAdded: () -> Unit) {
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    var skill by rememberSaveable { mutableStateOf(initialSkill.takeIf { it in Rules.SKILL_KEYS } ?: Rules.SKILL_KEYS.first()) }
     var xp by rememberSaveable { mutableStateOf("20") }
     var save by rememberSaveable { mutableStateOf(false) }
     var repeat by rememberSaveable { mutableStateOf(false) }
@@ -264,17 +264,15 @@ private fun NewTodayTask(viewModel: GameViewModel, onAdded: () -> Unit) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Rules.SKILL_KEYS.forEach { key -> FilterChip(selected = key == skill, onClick = { skill = key }, label = { Text(Rules.SKILL_LABELS.getValue(key)) }) }
         }
-        NumberField(value = xp, onValueChange = { xp = it }, label = "Base XP")
+        ActivityXpField(xp) { xp = it }
         Text("Suggested: small effort 10 · focused task 25 · substantial effort 50.", style = MaterialTheme.typography.bodySmall)
-        Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(save, { save = it }); Text("Save for future days") }
+        Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(save, { save = it }); Text("Save as a new activity") }
         Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(repeat, { repeat = it }); Text("Repeat on weekdays") }
         if (repeat) WeekdayPicker(days) { days = it }
         AppButton(onClick = { viewModel.run { state ->
-            val amount = xp.toIntOrNull() ?: 0
-            val result = if (repeat && days.isEmpty()) Outcome.Failure("Choose at least one weekday.") else GameEngine.addTodoTask(state, name, skill, amount)
+            val amount = xp.toIntOrNull() ?: -1
+            val result = if (repeat && days.isEmpty()) Outcome.Failure("Choose at least one weekday.") else GameEngine.addPlannedActivity(state, name, skill, amount, save, if (repeat) days else emptySet())
             if (result is Outcome.Applied) {
-                if (save) GameEngine.addActivity(state, skill, name, amount)
-                if (repeat) Planning.saveRecurring(state, null, name, skill, amount, days)
                 onAdded()
             }
             result

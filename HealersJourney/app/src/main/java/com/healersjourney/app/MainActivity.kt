@@ -101,7 +101,6 @@ import com.healersjourney.app.ui.GameSnapshot
 import com.healersjourney.app.ui.GameViewModel
 import com.healersjourney.app.ui.components.PillNavigation
 import com.healersjourney.app.ui.components.Art
-import com.healersjourney.app.ui.screens.AchievementsScreen
 import com.healersjourney.app.ui.screens.CareScreen
 import com.healersjourney.app.ui.screens.DataScreen
 import com.healersjourney.app.ui.screens.DashboardScreen
@@ -144,8 +143,9 @@ enum class Destination(val label: String, val icon: ImageVector) {
     Character("Store", Icons.Filled.Sanitizer),
     Todo("Today", Icons.Filled.Checklist),
     Care("Personal care", Icons.Filled.Sanitizer),
-    Milestones("Milestones", Icons.Filled.Flag),
-    Achievements("Achievements", Icons.Filled.WorkspacePremium),
+    Milestones("Goals & milestones", Icons.Filled.Flag),
+    // Retained only so older saved navigation state can be redirected safely.
+    Achievements("Journal", Icons.Filled.Menu),
     Logs("Logs & history", Icons.AutoMirrored.Filled.ReceiptLong),
     Data("Data & sync", Icons.Filled.CloudSync)
 }
@@ -204,8 +204,8 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
     var destination by rememberSaveable { mutableStateOf(Destination.Dashboard) }
     var tab by rememberSaveable { mutableStateOf(Destination.Dashboard) }
     var todaySkill by rememberSaveable { mutableStateOf<String?>(null) }
-    val primary = listOf(Destination.Dashboard, Destination.Todo, Destination.Character, Destination.More)
-    val retiredPages = setOf(Destination.LearningProgress, Destination.WorkProgress, Destination.FitnessProgress, Destination.SocialProgress, Destination.CreativityProgress, Destination.RestProgress)
+    val primary = listOf(Destination.Dashboard, Destination.Todo, Destination.More, Destination.Character)
+    val retiredPages = setOf(Destination.Achievements, Destination.LearningProgress, Destination.WorkProgress, Destination.FitnessProgress, Destination.SocialProgress, Destination.CreativityProgress, Destination.RestProgress)
     val open: (Destination) -> Unit = { next ->
         val target = when {
             next in retiredPages -> Destination.Dashboard
@@ -280,6 +280,7 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(bottom = 20.dp)) {
                     when (page) {
+                        Destination.Achievements -> ExploreScreen(snapshot, viewModel, open)
                         Destination.Dashboard -> DashboardScreen(snapshot, viewModel, open)
                         Destination.Growth -> DashboardScreen(snapshot, viewModel, open)
                         Destination.LearningProgress -> DashboardScreen(snapshot, viewModel, open)
@@ -302,7 +303,6 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
                         Destination.Todo -> TodoScreen(snapshot, viewModel, todaySkill, screenScroll, scrollViewportTopPx) { open(Destination.Sleep) }
                         Destination.Care -> CareScreen(snapshot, viewModel)
                         Destination.Milestones -> MilestonesScreen(snapshot, viewModel)
-                        Destination.Achievements -> AchievementsScreen(snapshot, viewModel)
                         Destination.Logs -> LogsScreen(snapshot, viewModel)
                         Destination.Data -> DataScreen(snapshot, viewModel, drive, onSignIn)
                     }

@@ -8,6 +8,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import com.healersjourney.app.domain.*
 import com.healersjourney.app.ui.*
 import com.healersjourney.app.ui.components.*
@@ -39,26 +43,65 @@ fun PersonalGoalsSection(snapshot: GameSnapshot, viewModel: GameViewModel, compa
     var adding by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<PersonalGoal?>(null) }
     var commemorative by remember { mutableStateOf<PersonalGoal?>(null) }
-    val goals = state.personalGoals.sortedWith(compareBy<PersonalGoal> { it.end < Dates.gameDayKey() }.thenBy { it.end })
+    var filter by rememberSaveable { mutableStateOf("Active") }
+    var menuId by remember { mutableStateOf<String?>(null) }
+    val today = Dates.gameDayKey()
+    val goals = state.personalGoals.sortedBy { it.end }.filter { goal ->
+        val done = Planning.goalActions(state, goal).size >= goal.target
+        if (compact) today in goal.start..goal.end else when (filter) {
+            "Achieved" -> done
+            "Past" -> goal.end < today && !done
+            else -> goal.end >= today && !done
+        }
+    }
     SectionCard(title = "Personal goals", collapsible = compact, initiallyExpanded = !compact,
         trailing = { AppTextButton(onClick = { adding = true }) { Text("Add goal") } }) {
-        if (goals.isEmpty()) Text("Give your activities a purpose. Try exercising 12 times this month.", style = MaterialTheme.typography.bodySmall)
-        goals.forEach { goal ->
-            val count = Planning.goalActions(state, goal).size
-            val earned = count >= goal.target
-            Row(Modifier.fillMaxWidth().clickable { editing = goal }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                TrophyImage(goal.skill, Modifier.size(if (earned) 64.dp else 52.dp).clickable(enabled = earned) { commemorative = goal },
-                    description = if (earned) "View earned goal trophy" else "Goal trophy in progress", alpha = if (earned) 1f else .55f)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(goal.title, style = MaterialTheme.typography.titleSmall)
-                    Text("${minOf(count, goal.target)} / ${goal.target} · ${goal.start.take(7)}${if (earned) " · Trophy earned" else if (goal.end < Dates.gameDayKey()) " · Ended" else ""}", style = MaterialTheme.typography.labelSmall)
-                    SimpleProgress(progress = { (count.toFloat() / goal.target).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                }
-                if (!compact) AppTextButton(onClick = { deleting = goal }) { Text("Remove") }
+        if (!compact) {
+            Text("Choose a target for the month. Log activities or mark a goal done today to move forward.", style = MaterialTheme.typography.bodyMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("Active", "Achieved", "Past").forEach { label -> FilterChip(filter == label, { filter = label }, label = { Text(label) }) }
             }
         }
-        Text("Completions count automatically. Undoing an activity updates its goal and trophy too.", style = MaterialTheme.typography.labelSmall)
+        if (goals.isEmpty()) Text(if (state.personalGoals.isEmpty()) "Start small: exercise 12 times or read 4 chapters this month." else "No ${if (compact) "current" else filter.lowercase()} goals here yet.", style = MaterialTheme.typography.bodyMedium)
+        goals.forEach { goal ->
+            val actions = Planning.goalActions(state, goal)
+            val count = actions.size
+            val earned = count >= goal.target
+            val checkedIn = state.actionHistory.any { it.activityId == Planning.goalCheckInId(goal.id, today) }
+            val doneToday = actions.any { it.date == today }
+            Surface(shape = RoundedCornerShape(18.dp), color = skillColor(goal.skill).copy(alpha = .07f),
+                border = BorderStroke(1.dp, skillColor(goal.skill).copy(alpha = .18f))) {
+            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TrophyImage(goal.skill, Modifier.size(if (earned) 64.dp else 52.dp).clickable(enabled = earned) { commemorative = goal },
+                    description = if (earned) "View earned goal trophy" else "Goal trophy in progress", alpha = if (earned) 1f else .7f)
+                Column(Modifier.weight(1f).clickable { editing = goal }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(goal.title, style = MaterialTheme.typography.titleSmall)
+                    Text("${Rules.SKILL_LABELS[goal.skill]} · ${goalMonthLabel(goal.start.take(7))}", style = MaterialTheme.typography.labelSmall)
+                }
+                Box {
+                    IconButton(onClick = { menuId = goal.id }) { Icon(Icons.Filled.MoreVert, "Goal options") }
+                    DropdownMenu(menuId == goal.id, { menuId = null }) {
+                        DropdownMenuItem(text = { Text("Edit goal") }, onClick = { menuId = null; editing = goal })
+                        DropdownMenuItem(text = { Text("Remove goal") }, onClick = { menuId = null; deleting = goal })
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("${minOf(count, goal.target)} of ${goal.target}", style = MaterialTheme.typography.titleSmall)
+                Text(if (earned) "Trophy earned" else "${(goal.target-count).coerceAtLeast(0)} to go", style = MaterialTheme.typography.labelLarge, color = skillColor(goal.skill))
+            }
+            SimpleProgress(progress = { count.toFloat() / goal.target }, color = skillColor(goal.skill), modifier = Modifier.fillMaxWidth())
+            if (today in goal.start..goal.end) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(if (checkedIn) "Checked in today" else if (doneToday) "Activity counted today" else "0 XP · +10 coins", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall)
+                if (checkedIn) AppTextButton(onClick = { viewModel.run { Planning.undoGoalCheckIn(it, goal.id) } }) { Text("Undo today") }
+                else AppTonalButton(enabled = !doneToday && !earned, onClick = { viewModel.run { Planning.checkInGoal(it, goal.id) } }) { Text(if (doneToday) "✓ Done today" else if (earned) "Achieved" else "Done today") }
+            }
+            }
+            }
+            Spacer(Modifier.height(6.dp))
+        }
     }
     if (adding || editing != null) GoalEditor(state, editing, onDismiss = { adding = false; editing = null }) { title, skill, activity, target, month ->
         viewModel.run { val result = Planning.saveGoal(it, editing?.id, title, skill, activity, target, month)
@@ -80,6 +123,8 @@ fun PersonalGoalsSection(snapshot: GameSnapshot, viewModel: GameViewModel, compa
         }) { Text("Remove") } }, dismissButton = { AppTextButton(onClick = { deleting = null }) { Text("Keep") } }) }
 }
 
+private fun goalMonthLabel(month: String): String = "${Dates.monthName(month.takeLast(2).toIntOrNull() ?: 1)} ${month.take(4)}"
+
 @Composable
 private fun GoalEditor(state: GameState, goal: PersonalGoal?, onDismiss: () -> Unit,
                        onSave: (String, String, String, Int, String) -> Unit) {
@@ -88,25 +133,35 @@ private fun GoalEditor(state: GameState, goal: PersonalGoal?, onDismiss: () -> U
     var activity by rememberSaveable { mutableStateOf(goal?.activity ?: "") }
     var target by rememberSaveable { mutableStateOf(goal?.target?.toString() ?: "12") }
     var month by rememberSaveable { mutableStateOf(goal?.start?.take(7) ?: Dates.gameDayKey().take(7)) }
+    var specific by rememberSaveable { mutableStateOf(goal?.activity?.isNotBlank() ?: false) }
+    var activitySearch by rememberSaveable { mutableStateOf("") }
+    val currentMonth = Dates.gameDayKey().take(7)
+    val nextMonth = Dates.keyToCal("$currentMonth-01")!!.apply { add(java.util.Calendar.MONTH, 1) }.let { Dates.dateKeyOf(it).take(7) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if (goal == null) "Set a personal goal" else "Your goal") }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(title, { title = it.take(100) }, label = { Text("Goal name") }, singleLine = true)
             CategoryPicker(skill) { skill = it; activity = "" }
             OutlinedTextField(target, { target = it.filter(Char::isDigit).take(4) }, label = { Text("Number of completions") }, singleLine = true)
-            OutlinedTextField(month, { month = it.take(7) }, label = { Text("Month (YYYY-MM)") }, singleLine = true)
-            Text("Counts activities completed during this calendar month, including earlier completions.", style = MaterialTheme.typography.bodySmall)
+            Text("When", style = MaterialTheme.typography.labelLarge)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                FilterChip(activity.isEmpty(), { activity = "" }, label = { Text("All in category") })
+                (listOf(currentMonth, nextMonth) + month).distinct().forEach { choice -> FilterChip(month == choice, { month = choice }, label = { Text(goalMonthLabel(choice)) }) }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Count a specific activity", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                Switch(specific, { specific = it; if (!it) activity = "" })
+            }
+            if (specific) {
+                OutlinedTextField(activity, { activity = it.take(100); activitySearch = it }, label = { Text("Activity name") }, singleLine = true)
                 val defs = state.activityDefs[skill]
-                (defs?.major.orEmpty() + defs?.other.orEmpty()).distinctBy { it.name }.forEach { def ->
+                (defs?.major.orEmpty() + defs?.other.orEmpty()).distinctBy { it.name }
+                    .filter { it.name.contains(activitySearch, true) }.take(5).forEach { def ->
                     val label = Rules.activityLabel(skill, def.name)
-                    FilterChip(activity == label, { activity = label }, label = { Text(label) })
+                    Text(label, Modifier.fillMaxWidth().clickable { activity = label; activitySearch = label }.padding(vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            OutlinedTextField(activity, { activity = it.take(100) }, label = { Text("Specific activity (optional)") }, singleLine = true)
-            Text("Leave empty for all activities in this category, or match an activity name exactly.", style = MaterialTheme.typography.bodySmall)
+            Text(if (specific) "Only this activity counts. Done today also logs this activity." else "All ${Rules.SKILL_LABELS[skill]} activities count toward your target.", style = MaterialTheme.typography.bodySmall)
         }
-    }, confirmButton = { AppTextButton(onClick = { onSave(title, skill, activity, target.toIntOrNull() ?: 0, month) }) { Text("Save goal") } },
+    }, confirmButton = { AppTextButton(enabled = title.isNotBlank() && (target.toIntOrNull() ?: 0) in 1..1000 && (!specific || activity.isNotBlank()), onClick = { onSave(title, skill, if (specific) activity else "", target.toIntOrNull() ?: 0, month) }) { Text("Save goal") } },
         dismissButton = { AppTextButton(onClick = onDismiss) { Text("Close") } })
 }
 
@@ -149,11 +204,11 @@ private fun RecurringEditor(rule: RecurringTask?, onDismiss: () -> Unit, onSave:
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(name, { name = it.take(100) }, label = { Text("Task name") }, singleLine = true)
             CategoryPicker(skill) { skill = it }
-            OutlinedTextField(xp, { xp = it.filter(Char::isDigit) }, label = { Text("Base XP") }, singleLine = true)
+            ActivityXpField(xp) { xp = it }
             WeekdayPicker(days) { days = it }
             Text("Starts today. Each scheduled day gets one editable task with the usual rewards.", style = MaterialTheme.typography.bodySmall)
         }
-    }, confirmButton = { AppTextButton(onClick = { onSave(name, skill, xp.toIntOrNull() ?: 0, days) }) { Text("Save schedule") } },
+    }, confirmButton = { AppTextButton(onClick = { onSave(name, skill, xp.toIntOrNull() ?: -1, days) }) { Text("Save schedule") } },
         dismissButton = { AppTextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
@@ -205,7 +260,7 @@ fun EditPlannedTaskDialog(task: TodoTask, viewModel: GameViewModel, onRemove: ()
             if (task.completed) Text("${task.name}\nUndo this task before editing its details.") else {
                 OutlinedTextField(name, { name = it.take(100) }, label = { Text("Task name") }, singleLine = true)
                 CategoryPicker(skill) { skill = it }
-                OutlinedTextField(xp, { xp = it.filter(Char::isDigit) }, label = { Text("Base XP") }, singleLine = true)
+                ActivityXpField(xp) { xp = it }
                 if (!task.id.startsWith("todo-repeat-")) {
                     Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(repeat, { repeat = it }); Text("Repeat on selected weekdays") }
                     if (repeat) WeekdayPicker(days) { days = it }
@@ -216,7 +271,7 @@ fun EditPlannedTaskDialog(task: TodoTask, viewModel: GameViewModel, onRemove: ()
     }, confirmButton = { if (!task.completed) AppTextButton(onClick = {
         viewModel.run { state ->
             if (repeat && days.isEmpty()) Outcome.Failure("Choose at least one weekday.") else {
-                val result = GameEngine.updateTodoTask(state, task.id, name, skill, xp.toIntOrNull() ?: 0)
+                val result = GameEngine.updateTodoTask(state, task.id, name, skill, xp.toIntOrNull() ?: -1)
                 if (result is Outcome.Applied) {
                     if (repeat) Planning.saveRecurring(state, null, name, skill, xp.toInt(), days)
                     onDismiss()

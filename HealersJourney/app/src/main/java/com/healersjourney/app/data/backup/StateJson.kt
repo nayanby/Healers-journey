@@ -24,14 +24,14 @@ object StateJson {
 
     const val APP_NAME = "Life RPG"
     const val STORAGE_KEY = "healersJourneyLifeRpgV1"
-    const val BACKUP_VERSION = 39
+    const val BACKUP_VERSION = 40
     const val BACKUP_TYPE = "complete-local-storage-json"
 
     /** Fields added after the original Room tables; kept in the same database transaction. */
     fun encodeLocalExtras(state: GameState): JSONObject {
         val all = encode(state)
         val extras = JSONObject()
-        listOf("planning", "onboardingCompleted", "worldUnlocks", "worldEquipment", "coins", "coinRewardDays", "coinAwardedActionIds", "coinDebt", "adventureClaims", "dailyQuestDate", "dailyQuestIds",
+        listOf("thoughts", "planning", "onboardingCompleted", "worldUnlocks", "worldEquipment", "coins", "coinRewardDays", "coinAwardedActionIds", "coinDebt", "adventureClaims", "dailyQuestDate", "dailyQuestIds",
             "soundEnabled", "hapticsEnabled", "careRoutines", "careDefaultsVersion").forEach { extras.put(it, all.get(it)) }
         extras.put("actionActivityIds", JSONObject().apply {
             state.actionHistory.forEach { action -> action.activityId?.let { put(action.id, it) } }
@@ -43,6 +43,7 @@ object StateJson {
         val extras = JSONObject(text)
         val saved = decode(text)
         PlanningJson.restore(state, extras.optJSONObject("planning"))
+        state.thoughts.addAll(saved.thoughts)
         state.onboardingCompleted = saved.onboardingCompleted
         state.worldUnlocks.addAll(saved.worldUnlocks)
         state.worldEquipment.putAll(saved.worldEquipment)
@@ -82,6 +83,8 @@ object StateJson {
     }
 
     fun encode(state: GameState): JSONObject = JSONObject()
+        .put("thoughts", JSONArray().apply { state.thoughts.forEach { entry -> put(JSONObject()
+            .put("id", entry.id).put("date", entry.date).put("text", entry.text)) } })
         .put("planning", PlanningJson.encode(state))
         .put("playerName", state.playerName)
         .put("onboardingCompleted", state.onboardingCompleted)
@@ -277,6 +280,12 @@ object StateJson {
 
     private fun decodeState(json: JSONObject): GameState {
         val state = GameState()
+        json.optJSONArray("thoughts")?.let { entries -> (0 until entries.length()).forEach { index ->
+            val entry = entries.optJSONObject(index) ?: return@forEach
+            com.healersjourney.app.domain.Thoughts.save(state, entry.optString("date"), entry.optString("text"))
+            val savedIndex = state.thoughts.indexOfFirst { it.date == entry.optString("date") }
+            if (savedIndex >= 0 && entry.optString("id").isNotBlank()) state.thoughts[savedIndex] = state.thoughts[savedIndex].copy(id = entry.getString("id"))
+        } }
         PlanningJson.restore(state, json.optJSONObject("planning"))
         state.playerName = json.optString("playerName", state.playerName)
         // Existing saves predate onboarding and should open without an extra setup step.

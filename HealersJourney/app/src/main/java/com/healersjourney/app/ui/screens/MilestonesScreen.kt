@@ -1,171 +1,118 @@
 package com.healersjourney.app.ui.screens
 
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
-import com.healersjourney.app.ui.components.AppButton as Button
-import com.healersjourney.app.ui.components.AppIcon as Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import com.healersjourney.app.ui.components.AppTextButton as TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.healersjourney.app.ui.components.AppLayout
 import androidx.compose.ui.unit.dp
-import com.healersjourney.app.domain.Dates
-import com.healersjourney.app.domain.GameEngine
-import com.healersjourney.app.domain.Milestone
-import com.healersjourney.app.ui.GameSnapshot
-import com.healersjourney.app.ui.GameViewModel
-import com.healersjourney.app.ui.components.EmptyHint
-import com.healersjourney.app.ui.components.SectionCard
-import com.healersjourney.app.ui.components.StatLine
+import com.healersjourney.app.domain.*
+import com.healersjourney.app.ui.*
+import com.healersjourney.app.ui.components.*
 
 @Composable
 fun MilestonesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
     val state = snapshot.state
-    GameEngine.ensureMilestones(state)
-    val milestones = state.milestones.toList()
+    var section by rememberSaveable { mutableIntStateOf(0) }
+    var filter by rememberSaveable { mutableStateOf("Ahead") }
     var adding by remember { mutableStateOf(false) }
-    var detail by remember { mutableStateOf<Milestone?>(null) }
-
-    Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
-        PersonalGoalsSection(snapshot, viewModel)
-        SectionCard(
-            title = "Milestones",
-            trailing = {
-                TextButton(onClick = { adding = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(AppLayout.icon))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Add")
-                }
-            }
-        ) {
-            if (milestones.isNotEmpty()) {
-                StatLine("Remembered", "${milestones.count { it.completed }}")
-            }
-            Text(
-                "Add moments and goals you want to remember, big or small. Mark them when they happen and look back on them here.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+    var editing by remember { mutableStateOf<Milestone?>(null) }
+    var deleting by remember { mutableStateOf<Milestone?>(null) }
+    var menuId by remember { mutableStateOf<String?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        TabRow(selectedTabIndex = section) {
+            Tab(section == 0, { section = 0 }, text = { Text("Milestones") })
+            Tab(section == 1, { section = 1 }, text = { Text("Personal goals") })
         }
-
-        if (milestones.isEmpty()) {
-            SectionCard(title = "Nothing yet") {
-                EmptyHint("Add a milestone to remember something that matters to you.")
+        if (section == 1) { PersonalGoalsSection(snapshot, viewModel); return@Column }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Moments that matter", style = MaterialTheme.typography.titleLarge)
+                Text("Keep something to look forward to, or remember a moment you've reached.", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            AppButton(onClick = { adding = true }) { Text("Add") }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf("Ahead", "Remembered", "All").forEach { label ->
+                FilterChip(filter == label, { filter = label }, label = {
+                    Text("$label ${when(label) { "Ahead" -> state.milestones.count { !it.completed }; "Remembered" -> state.milestones.count { it.completed }; else -> state.milestones.size }}")
+                })
             }
         }
-
+        val milestones = state.milestones.filter { when(filter) { "Ahead" -> !it.completed; "Remembered" -> it.completed; else -> true } }
+            .sortedWith(compareByDescending<Milestone> { it.showOnMain }.thenByDescending { it.completedDate })
+        if (milestones.isEmpty()) SectionCard(if (filter == "Remembered") "Your story is still unfolding" else "Something to look forward to") {
+            Text(if (filter == "Remembered") "Your completed milestones will be collected here, with the date you reached them."
+                else "A first 5K, finishing a course, or a meaningful day. Add a milestone in your own words.", style = MaterialTheme.typography.bodyMedium)
+        }
         milestones.forEach { milestone ->
-            SectionCard(title = milestone.title) {
-                Text(
-                    milestone.desc.ifEmpty { "No description added." },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    if (milestone.completed) "Completed ${Dates.formatMilestoneDate(milestone.completedDate)}"
-                    else "Not completed yet",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (milestone.completed) MaterialTheme.colorScheme.tertiary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(AppLayout.contentGap))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Show on Home", style = MaterialTheme.typography.bodyMedium)
+            Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface) {
+                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Image(gameArtPainter(com.healersjourney.app.R.drawable.color_milestone), null, Modifier.size(40.dp))
+                        Column(Modifier.weight(1f).clickable { editing = milestone }) {
+                            Text(milestone.title, style = MaterialTheme.typography.titleMedium)
+                            Text(if (milestone.completed) "Reached ${Dates.prettyCareDate(milestone.completedDate)}" else "Still ahead",
+                                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Box {
+                            IconButton(onClick = { menuId = milestone.id }) { Icon(Icons.Filled.MoreVert, "Milestone options") }
+                            DropdownMenu(menuId == milestone.id, { menuId = null }) {
+                                DropdownMenuItem(text = { Text("Edit milestone") }, onClick = { menuId = null; editing = milestone })
+                                DropdownMenuItem(text = { Text(if (milestone.showOnMain) "Unpin from Home" else "Pin to Home") }, onClick = {
+                                    menuId = null; viewModel.run { GameEngine.toggleMilestoneMain(it, milestone.id) }
+                                })
+                                DropdownMenuItem(text = { Text("Delete milestone") }, onClick = { menuId = null; deleting = milestone })
+                            }
+                        }
                     }
-                    Switch(
-                        checked = milestone.showOnMain,
-                        onCheckedChange = { viewModel.run { GameEngine.toggleMilestoneMain(it, milestone.id) } }
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Button(
-                        onClick = { detail = milestone },
-                        modifier = Modifier.weight(1f)
-                    ) { Text(if (milestone.completed) "View" else "Complete") }
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(onClick = {
-                        viewModel.runQuiet { GameEngine.deleteMilestoneById(it, milestone.id) }
-                    }) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = "Delete ${milestone.title}",
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                    if (milestone.desc.isNotBlank()) Text(milestone.desc, style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        if (milestone.showOnMain) {
+                            Icon(Icons.Filled.PushPin, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(4.dp)); Text("On Home", style = MaterialTheme.typography.labelSmall)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        AppTextButton(onClick = { if (milestone.completed) editing = milestone else viewModel.run { GameEngine.completeMilestoneById(it, milestone.id) } }) {
+                            Text(if (milestone.completed) "View memory" else "I've reached this")
+                        }
                     }
                 }
             }
         }
     }
-
-    if (adding) {
-        AddMilestoneDialog(
-            onDismiss = { adding = false },
-            onAdd = { title, desc ->
-                viewModel.run { GameEngine.addMilestone(it, title, desc) }
-                adding = false
-            }
-        )
+    if (adding || editing != null) MilestoneEditor(editing, onDismiss = { adding = false; editing = null }) { title, desc, completed, pinned ->
+        viewModel.run { val result = GameEngine.saveMilestone(it, editing?.id, title, desc, completed, pinned)
+            if (result is Outcome.Applied) { adding = false; editing = null }; result }
     }
-
-    detail?.let { milestone ->
-        MilestoneDialog(milestone, onDismiss = { detail = null }) {
-            viewModel.run { GameEngine.completeMilestoneById(it, milestone.id) }
-            detail = null
-        }
-    }
+    deleting?.let { milestone -> AlertDialog(onDismissRequest = { deleting = null }, title = { Text("Delete this milestone?") },
+        text = { Text(milestone.title) }, confirmButton = { AppTextButton(onClick = {
+            viewModel.runQuiet { GameEngine.deleteMilestoneById(it, milestone.id) }; deleting = null
+        }) { Text("Delete") } }, dismissButton = { AppTextButton(onClick = { deleting = null }) { Text("Keep") } }) }
 }
 
 @Composable
-private fun AddMilestoneDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var desc by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add a milestone") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("What do you want to remember?") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(AppLayout.contentGap))
-                OutlinedTextField(
-                    value = desc,
-                    onValueChange = { desc = it },
-                    label = { Text("Description (optional)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = { Button(onClick = { onAdd(title, desc) }) { Text("Add") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
+private fun MilestoneEditor(milestone: Milestone?, onDismiss: () -> Unit, onSave: (String, String, Boolean, Boolean) -> Unit) {
+    var title by rememberSaveable { mutableStateOf(milestone?.title.orEmpty()) }
+    var description by rememberSaveable { mutableStateOf(milestone?.desc.orEmpty()) }
+    var completed by rememberSaveable { mutableStateOf(milestone?.completed ?: false) }
+    var pinned by rememberSaveable { mutableStateOf(milestone?.showOnMain ?: true) }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(if (milestone == null) "Add a milestone" else "Your milestone") }, text = {
+        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(title, { title = it.take(100) }, label = { Text("What matters to you?") }, singleLine = true)
+            OutlinedTextField(description, { description = it.take(4000) }, label = { Text("A few words to remember (optional)") }, minLines = 3)
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(completed, { completed = it }); Text("I've already reached this") }
+            if (completed) Text("Reached ${Dates.prettyCareDate(milestone?.completedDate?.ifBlank { Dates.todayKey() } ?: Dates.todayKey())}", style = MaterialTheme.typography.labelMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(pinned, { pinned = it }); Text("Pin to Home") }
+        }
+    }, confirmButton = { AppTextButton(enabled = title.isNotBlank(), onClick = { onSave(title, description, completed, pinned) }) { Text("Save milestone") } },
+        dismissButton = { AppTextButton(onClick = onDismiss) { Text("Close") } })
 }

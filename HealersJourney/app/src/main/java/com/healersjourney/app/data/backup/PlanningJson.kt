@@ -29,7 +29,7 @@ object PlanningJson {
             val days = r.optJSONArray("weekdays")?.let { d -> (0 until d.length()).map { d.optInt(it) }.filter { it in 1..7 }.toSet() }.orEmpty()
             if (r.optString("skill") in Rules.SKILL_KEYS && days.isNotEmpty() && r.optString("id").isNotBlank())
                 state.recurringTasks.add(RecurringTask(r.getString("id"), r.optString("name"), r.getString("skill"),
-                    r.optInt("xp", 20).coerceIn(1, 10000), days, r.optString("start")))
+                    r.optInt("xp", 20).coerceIn(0, 10000), days, r.optString("start")))
         } }
         json.optJSONArray("occurrences")?.let { arr -> (0 until arr.length()).forEach { state.scheduledOccurrences.add(arr.getString(it)) } }
         json.optJSONObject("focus")?.let { f ->

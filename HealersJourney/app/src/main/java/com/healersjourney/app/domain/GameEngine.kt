@@ -283,7 +283,7 @@ object GameEngine {
     }
 
     fun completeCustomTask(state: GameState, name: String, skill: String, xp: Int): Outcome {
-        if (xp <= 0) return Outcome.Failure("Enter XP more than 0.")
+        if (xp !in 0..10000) return Outcome.Failure("Use 0–10,000 base XP.")
         addXp(state, skill, xp, name.ifBlank { "Custom Quest" })
         return Outcome.Applied
     }
@@ -401,7 +401,7 @@ object GameEngine {
     }
 
     fun completeHobbyActivity(state: GameState, hobby: String, note: String, xp: Int): Outcome {
-        if (xp <= 0) return Outcome.Failure("Enter XP more than 0.")
+        if (xp !in 0..10000) return Outcome.Failure("Use 0–10,000 base XP.")
         val picked = hobby.ifBlank { "Hobby" }
         val name = if (note.isNotBlank()) "$picked: ${note.trim()}" else "$picked practice"
         val base = xp.coerceIn(1, 10000)
@@ -493,7 +493,7 @@ object GameEngine {
         ensureActivityDefs(state)
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return Outcome.Failure("Enter activity name.")
-        if (xp <= 0) return Outcome.Failure("Enter XP more than 0.")
+        if (skill !in Rules.SKILL_KEYS || xp !in 0..10000) return Outcome.Failure("Choose a category and 0–10,000 base XP.")
         val lists = state.activityDefs.getOrPut(skill) { ActivityList() }
         lists.other.add(ActivityDef("${skill}_custom_${System.currentTimeMillis()}_${Random.nextInt(100_000)}", trimmed, xp))
         pushTaskLog(
@@ -507,7 +507,7 @@ object GameEngine {
         ensureActivityDefs(state)
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return Outcome.Failure("Enter activity name.")
-        if (xp <= 0) return Outcome.Failure("Enter XP more than 0.")
+        if (xp !in 0..10000) return Outcome.Failure("Use 0–10,000 base XP.")
         val lists = state.activityDefs[skill] ?: return Outcome.Failure("Activity list not found.")
         val source = listOf(lists.major, lists.other).firstOrNull { defs -> defs.any { it.id == id } }
             ?: return Outcome.Failure("Activity not found.")
@@ -602,7 +602,7 @@ object GameEngine {
         ensureTodoTasks(state)
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return Outcome.Failure("Enter task name first.")
-        if (skill !in Rules.SKILL_KEYS || xp !in 1..10000) return Outcome.Failure("Choose a category and 1–10,000 base XP.")
+        if (skill !in Rules.SKILL_KEYS || xp !in 0..10000) return Outcome.Failure("Choose a category and 0–10,000 base XP.")
         val view = getTodoListForView(state, true)
         if (view.list.any { it.skill == skill && it.name.equals(trimmed, true) }) return Outcome.Failure("That task is already on this day's list.")
         view.list.add(
@@ -610,7 +610,7 @@ object GameEngine {
                 id = Ids.make("todo"),
                 name = trimmed,
                 skill = skill.ifEmpty { "knowledgeXp" },
-                xp = max(1, xp),
+                xp = xp,
                 date = view.key,
                 completed = false,
                 completedAt = ""
@@ -624,7 +624,7 @@ object GameEngine {
         val index = tasks.indexOfFirst { it.id == id }
         if (index < 0) return Outcome.Failure("Task not found.")
         if (tasks[index].completed) return Outcome.Failure("Undo this task before editing it.")
-        if (name.isBlank() || skill !in Rules.SKILL_KEYS || xp !in 1..10000) return Outcome.Failure("Enter a task name, category and 1–10,000 base XP.")
+        if (name.isBlank() || skill !in Rules.SKILL_KEYS || xp !in 0..10000) return Outcome.Failure("Enter a task name, category and 0–10,000 base XP.")
         if (tasks.any { it.id != id && it.skill == skill && it.name.equals(name.trim(), true) }) return Outcome.Failure("This task is already on your day.")
         tasks[index] = tasks[index].copy(name = name.trim().take(100), skill = skill, xp = xp)
         return Outcome.Applied
@@ -813,7 +813,7 @@ object GameEngine {
                 m.copy(
                     id = m.id.ifEmpty { "m_custom_${i}_${System.currentTimeMillis()}" },
                     title = m.title.ifEmpty { "Milestone ${i + 1}" },
-                    desc = m.desc.ifEmpty { "A custom real-life milestone." }
+                    desc = m.desc.takeUnless { it == "A custom real-life milestone." }.orEmpty()
                 )
             }
         state.milestones.clear()
@@ -833,7 +833,7 @@ object GameEngine {
             Milestone(
                 id = "m_custom_${System.currentTimeMillis()}",
                 title = trimmed,
-                desc = desc.trim().ifEmpty { "A custom real-life milestone." }
+                desc = desc.trim()
             )
         )
         return Outcome.Applied
@@ -848,6 +848,28 @@ object GameEngine {
             completed = true,
             completedDate = milestone.completedDate.ifEmpty { Dates.todayKey() }
         )
+        return Outcome.Applied
+    }
+
+    fun saveMilestone(state: GameState, id: String?, title: String, desc: String, completed: Boolean, pinned: Boolean): Outcome {
+        if (title.isBlank()) return Outcome.Failure("Give this milestone a name.")
+        val previous = state.milestones.firstOrNull { it.id == id }
+        val milestone = Milestone(id ?: Ids.make("m_custom"), title.trim().take(100), desc.trim().take(4000), completed,
+            if (completed) previous?.completedDate?.ifEmpty { Dates.todayKey() } ?: Dates.todayKey() else "", pinned, previous?.image.orEmpty())
+        state.milestones.removeAll { it.id == milestone.id }
+        state.milestones.add(milestone)
+        return Outcome.Applied
+    }
+
+    /** Validate the whole request before adding either the task or its reusable activity. */
+    fun addPlannedActivity(state: GameState, name: String, skill: String, xp: Int, savePreset: Boolean, weekdays: Set<Int>): Outcome {
+        if (name.isBlank() || skill !in Rules.SKILL_KEYS || xp !in 0..10000 || weekdays.any { it !in 1..7 })
+            return Outcome.Failure("Enter a task, category and 0–10,000 base XP.")
+        val result = addTodoTask(state, name.trim(), skill, xp)
+        if (result is Outcome.Failure) return result
+        if (savePreset && (defsFor(state, skill, "major") + defsFor(state, skill, "other")).none { Rules.activityLabel(skill, it.name).equals(name.trim(), true) })
+            addActivity(state, skill, name.trim(), xp)
+        if (weekdays.isNotEmpty()) Planning.saveRecurring(state, null, name.trim(), skill, xp, weekdays)
         return Outcome.Applied
     }
 
