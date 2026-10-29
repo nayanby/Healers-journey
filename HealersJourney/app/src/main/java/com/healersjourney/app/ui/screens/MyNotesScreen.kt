@@ -18,7 +18,7 @@ import com.healersjourney.app.ui.components.*
 import kotlinx.coroutines.delay
 
 @Composable
-fun MyThoughtsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
+fun MyNotesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
     var editingDate by rememberSaveable { mutableStateOf<String?>(null) }
     var removing by remember { mutableStateOf<ThoughtEntry?>(null) }
     val state = snapshot.state
@@ -42,7 +42,7 @@ fun MyThoughtsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
                 }
                 AppTextButton(onClick = { save(); editingDate = null }) { Text("Done") }
             }
-            OutlinedTextField(draft, { draft = it.take(50_000) }, placeholder = { Text("What's on your mind?") },
+            OutlinedTextField(draft, { draft = it.take(50_000) }, placeholder = { Text("Write your notes…") },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 340.dp, max = 560.dp), shape = RoundedCornerShape(20.dp),
                 textStyle = MaterialTheme.typography.bodyLarge)
         }
@@ -51,31 +51,31 @@ fun MyThoughtsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("My thoughts", style = MaterialTheme.typography.titleLarge)
-                Text("A little space for your day.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("My notes", style = MaterialTheme.typography.titleLarge)
+                Text("A place for what you want to remember.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             AppButton(onClick = { editingDate = Dates.todayKey() }) {
-                Text(if (state.thoughts.any { it.date == Dates.todayKey() }) "Write today" else "New entry")
+                Text(if (state.thoughts.any { it.date == Dates.todayKey() }) "Write today" else "New note")
             }
         }
-        if (state.thoughts.isEmpty()) SectionCard("Start with a thought") {
-            Text("Type whatever you want to remember. Each entry is named by its date and saved automatically.", style = MaterialTheme.typography.bodyMedium)
+        if (state.thoughts.isEmpty()) SectionCard("Start a note") {
+            Text("Type whatever you want to remember. Each note is named by its date and saved automatically.", style = MaterialTheme.typography.bodyMedium)
         }
         state.thoughts.sortedByDescending { it.date }.forEach { entry ->
             Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
                 Row(Modifier.fillMaxWidth().clickable { editingDate = entry.date }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(Dates.prettyCareDate(entry.date), style = MaterialTheme.typography.titleSmall)
-                        Text(entry.text.ifBlank { "Empty entry" }, style = MaterialTheme.typography.bodyMedium, maxLines = 2,
+                        Text(entry.text.ifBlank { "Empty note" }, style = MaterialTheme.typography.bodyMedium, maxLines = 2,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = { removing = entry }) { Icon(Icons.Filled.DeleteOutline, "Delete entry for ${entry.date}") }
+                    IconButton(onClick = { removing = entry }) { Icon(Icons.Filled.DeleteOutline, "Delete note for ${entry.date}") }
                 }
             }
         }
     }
-    removing?.let { entry -> AlertDialog(onDismissRequest = { removing = null }, title = { Text("Delete this entry?") },
-        text = { Text("Your thoughts from ${Dates.prettyCareDate(entry.date)} will be removed.") },
+    removing?.let { entry -> AlertDialog(onDismissRequest = { removing = null }, title = { Text("Delete this note?") },
+        text = { Text("Your note from ${Dates.prettyCareDate(entry.date)} will be removed.") },
         confirmButton = { AppTextButton(onClick = { viewModel.runQuiet { it.thoughts.removeAll { thought -> thought.id == entry.id } }; removing = null }) { Text("Delete") } },
         dismissButton = { AppTextButton(onClick = { removing = null }) { Text("Keep") } }) }
 }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,19 +37,14 @@ fun DashboardScreen(snapshot: GameSnapshot, viewModel: GameViewModel, onOpen: (D
 
 @Composable
 fun ExploreScreen(snapshot: GameSnapshot, viewModel: GameViewModel, onOpen: (Destination) -> Unit) {
-    var section by rememberSaveable { mutableIntStateOf(0) }
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        TabRow(selectedTabIndex = section) {
-            Tab(selected = section == 0, onClick = { section = 0 }, text = { Text("Your journey") })
-            Tab(selected = section == 1, onClick = { section = 1 }, text = { Text("My thoughts") })
-        }
-        if (section == 1) { MyThoughtsScreen(snapshot, viewModel); return@Column }
         JourneyHeading("Your story so far", "Look back at what you've done and plan ahead.")
         ExploreGroup("Your journey", listOf(
             Triple(Destination.Logs, R.drawable.color_logs, "Activity history & insights"),
             Triple(Destination.Milestones, R.drawable.color_milestone, "Goals & milestones")
         ), onOpen)
         ExploreGroup("More tools", listOf(
+            Triple(Destination.Notes, R.drawable.gameart_icon_notes, "My notes"),
             Triple(Destination.Finance, R.drawable.color_finance, "Money & goals")
         ), onOpen)
     }

@@ -118,6 +118,7 @@ import com.healersjourney.app.ui.screens.StudyScreen
 import com.healersjourney.app.ui.screens.TitleShelfDialog
 import com.healersjourney.app.ui.screens.TodoScreen
 import com.healersjourney.app.ui.screens.SettingsScreen
+import com.healersjourney.app.ui.screens.MyNotesScreen
 import com.healersjourney.app.ui.theme.HealersJourneyTheme
 import kotlinx.coroutines.launch
 
@@ -140,6 +141,7 @@ enum class Destination(val label: String, val icon: ImageVector) {
     Sleep("Sleep", Icons.Filled.Bedtime),
     Hobbies("Creativity", Icons.Filled.MusicNote),
     Finance("Finance", Icons.Filled.AccountBalanceWallet),
+    Notes("My notes", Icons.AutoMirrored.Filled.MenuBook),
     Character("Store", Icons.Filled.Sanitizer),
     Todo("Today", Icons.Filled.Checklist),
     Care("Personal care", Icons.Filled.Sanitizer),
@@ -300,6 +302,7 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
                         Destination.Sleep -> SleepScreen(snapshot, viewModel)
                         Destination.Hobbies -> HobbiesScreen(snapshot, viewModel)
                         Destination.Finance -> FinanceScreen(snapshot, viewModel)
+                        Destination.Notes -> MyNotesScreen(snapshot, viewModel)
                         Destination.Todo -> TodoScreen(snapshot, viewModel, todaySkill, screenScroll, scrollViewportTopPx) { open(Destination.Sleep) }
                         Destination.Care -> CareScreen(snapshot, viewModel)
                         Destination.Milestones -> MilestonesScreen(snapshot, viewModel)

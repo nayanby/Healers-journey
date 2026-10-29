@@ -1,0 +1,5 @@
+# My notes PNG icon
+
+Created with the built-in image-generation tool. `icon.png` is the transparent original. `tools/export_notes_icon.py` exports a bounded 256 × 256 runtime PNG used in Journal → More tools → My notes.
+
+Prompt: Create ONE production PNG app-menu icon for 'My notes', no text in image. A compact cozy RPG notebook/journal with a deep teal leather cover, rich violet spine, small warm gold corner fittings and a golden pencil resting diagonally across it. A tiny cream page peeks out. Friendly polished dimensional pixel-art style, deliberate crisp pixel clusters, broad readable highlights and rich warm shadows, thick clear silhouette, modest detail so it reads at 36dp on a phone. Visually match colorful golden-trim pixel-art life RPG icons and a teal wallet icon with gold coins. Three-quarter front view, centered square canvas, entire object visible with 8 percent transparent padding. A notebook icon only, not a trophy: no pedestal, cup, badge, ribbon, floating decorations, scene, desk, background, letters, numbers, watermark or border. Truly transparent background.
