@@ -31,7 +31,7 @@ object Rules {
 
     fun categoryLabel(label: String): String = when (label) {
         "Medicine" -> "Work"
-        "Knowledge", "Study" -> "Learning"
+        "Knowledge", "Learning", "Study" -> "Study"
         "Strength" -> "Fitness"
         "Hobbies" -> "Creativity"
         else -> label
@@ -40,7 +40,7 @@ object Rules {
     val SKILL_KEYS = listOf("knowledgeXp", "medicineXp", "strengthXp", "socialXp", "hobbiesXp")
 
     val SKILL_LABELS = mapOf(
-        "knowledgeXp" to "Learning",
+        "knowledgeXp" to "Study",
         "medicineXp" to "Work",
         "strengthXp" to "Fitness",
         "socialXp" to "Social",
@@ -162,7 +162,7 @@ object Rules {
     val ATTRIBUTE_KEYS = listOf("knowledge", "medicine", "strength", "social", "hobbies")
 
     val ATTRIBUTE_LABELS = mapOf(
-        "knowledge" to "Learning",
+        "knowledge" to "Study",
         "medicine" to "Work",
         "strength" to "Fitness",
         "social" to "Social",

@@ -322,7 +322,7 @@ object GameEngine {
             state, skill = "knowledgeXp", xp = xp, name = label, type = "study",
             date = key, hours = allowed, baseXp = base, decayPercent = reduction
         )
-        pushTaskLog(state, "${action.ts} • $label • +$xp Learning XP", action.id)
+        pushTaskLog(state, "${action.ts} • $label • +$xp Study XP", action.id)
         return Outcome.Applied
     }
 

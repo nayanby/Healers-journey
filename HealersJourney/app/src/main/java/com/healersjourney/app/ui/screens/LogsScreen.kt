@@ -156,7 +156,7 @@ fun LogsScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
         SectionCard(title = title) {
             StatLine("Activities logged", "${summary.actions.size}")
             StatLine("Total XP", "${summary.totalXp}", MaterialTheme.colorScheme.primary)
-            StatLine("Learning", "${summary.studySessions} sessions • ${GameEngine.numText(summary.studyHours)} h")
+            StatLine("Study", "${summary.studySessions} sessions • ${GameEngine.numText(summary.studyHours)} h")
             StatLine("Sleep", "${summary.sleepSessions} nights • ${GameEngine.numText(summary.sleepHours)} h")
             StatLine("Workouts", "${summary.workouts}")
             Spacer(Modifier.height(AppLayout.contentGap))

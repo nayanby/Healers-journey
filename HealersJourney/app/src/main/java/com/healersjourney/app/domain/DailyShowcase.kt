@@ -4,7 +4,7 @@ package com.healersjourney.app.domain
 object DailyShowcase {
     data class Collection(val skill: String, val title: String)
     val collections = listOf(
-        Collection("knowledgeXp", "Learning"),
+        Collection("knowledgeXp", "Study"),
         Collection("medicineXp", "Work"),
         Collection("strengthXp", "Fitness"),
         Collection("socialXp", "Social"),

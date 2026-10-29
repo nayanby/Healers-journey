@@ -84,12 +84,12 @@ object Achievements {
 
     val METRIC_LABELS = mapOf(
         "totalXp" to "Total XP", "level" to "Level", "streak" to "Action streak",
-        "knowledgeXp" to "Learning XP", "medicineXp" to "Work XP",
+        "knowledgeXp" to "Study XP", "medicineXp" to "Work XP",
         "strengthXp" to "Fitness XP", "socialXp" to "Social XP", "hobbiesXp" to "Creativity XP",
-        "weeklyKnowledgeXp" to "Weekly Learning XP", "weeklyMedicineXp" to "Weekly Work XP",
+        "weeklyKnowledgeXp" to "Weekly Study XP", "weeklyMedicineXp" to "Weekly Work XP",
         "weeklyStrengthXp" to "Weekly Fitness XP", "weeklySocialXp" to "Weekly Social XP",
         "weeklyHobbiesXp" to "Weekly Creativity XP",
-        "studyHours" to "Lifetime learning hours", "weeklyStudyHours" to "Current week learning hours",
+        "studyHours" to "Lifetime study hours", "weeklyStudyHours" to "Current week study hours",
         "workoutDays" to "Lifetime workout days", "weeklyWorkoutDays" to "Current week workout days",
         "hobbySessions" to "Lifetime hobby sessions", "musicSessions" to "Music sessions",
         "chessSessions" to "Chess sessions", "sleepHours" to "Lifetime sleep hours",
@@ -172,14 +172,14 @@ object Achievements {
         add("Overall", "Hundred Active Days", "Be active on 100 different days.", uniqueActionDays >= 100, uniqueActionDays.toDouble(), 100.0)
 
         // Knowledge
-        add("Learning", "First Lesson", "Complete your first learning activity.", knowledgeActions >= 1, knowledgeActions.toDouble(), 1.0)
-        add("Learning", "Scholar in Training", "Complete 10 learning activities.", knowledgeActions >= 10, knowledgeActions.toDouble(), 10.0)
-        add("Learning", "Learning Machine", "Complete 25 learning activities.", knowledgeActions >= 25, knowledgeActions.toDouble(), 25.0)
-        add("Learning", "Learning Keeper", "Complete 50 learning activities.", knowledgeActions >= 50, knowledgeActions.toDouble(), 50.0)
-        add("Learning", "Master Scholar", "Complete 100 learning activities.", knowledgeActions >= 100, knowledgeActions.toDouble(), 100.0)
-        add("Learning", "First Learning Day", "Log learning on one day.", knowledgeDays >= 1, knowledgeDays.toDouble(), 1.0)
-        add("Learning", "Learning Week", "Log learning on 7 different days.", knowledgeDays >= 7, knowledgeDays.toDouble(), 7.0)
-        add("Learning", "Learning Month", "Log learning on 30 different days.", knowledgeDays >= 30, knowledgeDays.toDouble(), 30.0)
+        add("Study", "First Lesson", "Complete your first study activity.", knowledgeActions >= 1, knowledgeActions.toDouble(), 1.0)
+        add("Study", "Scholar in Training", "Complete 10 study activities.", knowledgeActions >= 10, knowledgeActions.toDouble(), 10.0)
+        add("Study", "Study Machine", "Complete 25 study activities.", knowledgeActions >= 25, knowledgeActions.toDouble(), 25.0)
+        add("Study", "Study Keeper", "Complete 50 study activities.", knowledgeActions >= 50, knowledgeActions.toDouble(), 50.0)
+        add("Study", "Master Scholar", "Complete 100 study activities.", knowledgeActions >= 100, knowledgeActions.toDouble(), 100.0)
+        add("Study", "First Study Day", "Log study on one day.", knowledgeDays >= 1, knowledgeDays.toDouble(), 1.0)
+        add("Study", "Study Week", "Log study on 7 different days.", knowledgeDays >= 7, knowledgeDays.toDouble(), 7.0)
+        add("Study", "Study Month", "Log study on 30 different days.", knowledgeDays >= 30, knowledgeDays.toDouble(), 30.0)
 
         // Medicine
         add("Work", "First Work Step", "Complete your first work activity.", medActions >= 1, medActions.toDouble(), 1.0)
@@ -275,7 +275,7 @@ object Achievements {
         return base + customList(state)
     }
 
-    val GROUP_ORDER = listOf("Overall", "Learning", "Work", "Fitness", "Social", "Creativity", "Sleep", "Finance")
+    val GROUP_ORDER = listOf("Overall", "Study", "Work", "Fitness", "Social", "Creativity", "Sleep", "Finance")
 
     fun grouped(state: GameState): Map<String, List<Achievement>> {
         val all = all(state)
@@ -299,7 +299,7 @@ object Achievements {
             "Finance" -> 9000.0
             "Overall" -> 8000.0
             "Work" -> 7600.0
-            "Learning" -> 7200.0
+            "Study" -> 7200.0
             "Fitness" -> 6800.0
             "Social" -> 6400.0
             "Creativity" -> 6000.0

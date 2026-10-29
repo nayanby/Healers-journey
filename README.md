@@ -19,7 +19,7 @@ The Kotlin / Jetpack Compose project lives in `HealersJourney/`. Its four main t
 
 ## Rewards
 
-Each completed activity in Learning, Work, Fitness, Social or Creativity earns 10 coins. Completing activities in any three categories earns an additional 30 coins; all five categories earns another 50 coins. Undo reverses linked rewards. If coins were already spent, later earnings repay the difference.
+Each completed activity in Study, Work, Fitness, Social or Creativity earns 10 coins. Completing activities in any three categories earns an additional 30 coins; all five categories earns another 50 coins. Undo reverses linked rewards. If coins were already spent, later earnings repay the difference.
 
 Each category's first 200 base XP per game day earns 100%, the next 200 earns 50%, and the rest earns 25%. Cumulative rounding prevents extra rewards from splitting an activity. The game day resets at 5 AM.
 

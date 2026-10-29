@@ -6,7 +6,7 @@ object CategoryGuide {
 
     fun forSkill(skill: String): Description? = when (skill) {
         "knowledgeXp" -> Description(
-            "Grow your understanding and learn something new. Use Learning for studying, reading and building knowledge.",
+            "Grow your understanding and learn something new. Use Study for studying, reading and building knowledge.",
             listOf("Read a book chapter", "Review study notes", "Take a course", "Practice a new language", "Learn a new skill")
         )
         "medicineXp" -> Description(

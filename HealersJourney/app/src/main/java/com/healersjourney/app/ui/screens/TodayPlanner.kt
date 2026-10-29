@@ -246,7 +246,7 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
         RecurringTasksSection(snapshot, viewModel)
         PersonalGoalsSection(snapshot, viewModel, compact = true)
         SectionCard(title = "How XP works", collapsible = true, initiallyExpanded = false) {
-            Text("Each category earns its first 200 base XP at full value per game day, its next 200 at 50%, then 25%. Learning uses 50 base XP/hour and shares this calculation. The day resets at 5 AM. Neglected categories never reduce another category's reward.", style = MaterialTheme.typography.bodySmall)
+            Text("Each category earns its first 200 base XP at full value per game day, its next 200 at 50%, then 25%. Study uses 50 base XP/hour and shares this calculation. The day resets at 5 AM. Neglected categories never reduce another category's reward.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
