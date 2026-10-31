@@ -111,11 +111,12 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
         text = { Text(if (task.completed) "This will also remove the XP, coins and trophy earned from this task." else "This task will be removed from your day.") },
         confirmButton = { AppTextButton(onClick = { viewModel.run { GameEngine.deleteTodoTask(it, task.id) }; removing = null }) { Text("Remove") } },
         dismissButton = { AppTextButton(onClick = { removing = null }) { Text("Keep") } }) }
-    Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
+    // The scroll container already insets every screen; the day header reads better flush under the bar.
+    Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap), modifier = Modifier.padding(top = -AppLayout.contentGap)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             FilledIconButton(onClick = { viewModel.runQuiet { GameEngine.showPreviousTodoDay(it) } },
-                modifier = Modifier.size(50.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous day", modifier = Modifier.size(27.dp))
+                modifier = Modifier.size(40.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous day", modifier = Modifier.size(22.dp))
             }
             AnimatedContent(targetState = view.key, modifier = Modifier.weight(1f),
                 transitionSpec = {
@@ -125,13 +126,13 @@ fun TodoScreen(snapshot: GameSnapshot, viewModel: GameViewModel, initialSkill: S
                 }, label = "Day heading") { day ->
                 val tasks = if (day == state.todoDate) state.todoTasks else state.todoHistory[day].orEmpty()
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(Dates.todoDisplayDate(day), style = MaterialTheme.typography.titleMedium)
-                    Text("${tasks.count { it.completed }} / ${tasks.size} done · ${state.actionHistory.filter { it.date == day }.sumOf { it.xp }} XP · ${state.coins} coins", style = MaterialTheme.typography.labelSmall)
+                    Text(Dates.todoDisplayDate(day), style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                    Text("${tasks.count { it.completed }} / ${tasks.size} done · ${state.actionHistory.filter { it.date == day }.sumOf { it.xp }} XP · ${state.coins} coins", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
             }
             FilledIconButton(onClick = { viewModel.runQuiet { GameEngine.showNextTodoDay(it) } },
-                modifier = Modifier.size(50.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next day", modifier = Modifier.size(27.dp))
+                modifier = Modifier.size(40.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next day", modifier = Modifier.size(22.dp))
             }
         }
         if (!view.viewingToday) AppTextButton(onClick = { viewModel.runQuiet { GameEngine.openTodoWindow(it) } }) { Text("Back to today") }

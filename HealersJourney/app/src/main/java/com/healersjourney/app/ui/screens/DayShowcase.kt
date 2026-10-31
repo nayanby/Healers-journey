@@ -11,11 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.healersjourney.app.domain.*
 import com.healersjourney.app.ui.components.*
@@ -43,64 +44,85 @@ fun DayShowcase(state: GameState, day: String, revision: Int) {
         }
         knownIds = entries.map { it.id }.toSet()
     }
+    val colors = MaterialTheme.colorScheme
+    val dark = colors.surface.luminance() < .5f
+    val gold = if (dark) Color(0xFFFFE1A5) else Color(0xFF8A5A00)
+    val slotFill = if (dark) Color(0xFF2F4A5C) else Color.White
+    val slotEdge = if (dark) Color(0x40FFE1A5) else Color(0x1F000000)
     // Display height, not window height, so the card does not resize when the keyboard opens.
     val minCardHeight = with(LocalDensity.current) { LocalContext.current.resources.displayMetrics.heightPixels.toDp() * .25f }
-    Surface(Modifier.fillMaxWidth().heightIn(min = minCardHeight), shape = RoundedCornerShape(24.dp), color = Color(0xFF233B4B)) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Daily trophies", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = Color(0xFFFFE1A5))
-                AppTextButton(onClick = { collectionOpen = true }) { Text("Collection", color = Color(0xFFFFE1A5)) }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Coins earned today", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = Color(0xFFD6E2E8))
-                Image(gameArtPainter(com.healersjourney.app.R.drawable.gameart_icon_coin), null, Modifier.size(20.dp))
-                Text("${DailyCoinBonus.earnedToday(state, day)}", style = MaterialTheme.typography.titleSmall, color = Color(0xFFFFE1A5))
+    Surface(Modifier.fillMaxWidth().heightIn(min = minCardHeight), shape = RoundedCornerShape(24.dp),
+        color = colors.surfaceVariant, border = BorderStroke(1.dp, slotEdge)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Image(gameArtPainter(com.healersjourney.app.R.drawable.gameart_decor_trophy), null, Modifier.size(22.dp))
+                Text("Daily trophies", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = gold)
+                AppTextButton(onClick = { collectionOpen = true }) { Text("Collection", color = gold) }
             }
             BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                // Four across, minus the three gaps each row needs.
-                val trophySize = ((maxWidth - 30.dp) / 4).coerceAtMost(96.dp)
-                if (entries.isEmpty()) {
-                    Text("A place for today's trophies", color = Color(0xFFE3CBA9), style = MaterialTheme.typography.labelSmall)
+                val slot = ((maxWidth - 24.dp) / 4).coerceAtMost(84.dp)
+                if (entries.isEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    repeat(4) { TrophySlot(slot, slotFill, slotEdge, null, null) {} }
                 } else Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     visible.chunked(4).forEach { rowItems ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             rowItems.forEach { action ->
-                                key(action.id) {
-                                    var appeared by remember { mutableStateOf(false) }
-                                    LaunchedEffect(Unit) { appeared = true }
-                                    val scale by animateFloatAsState(if(appeared) 1f else .25f, label = "Badge arrival")
-                                    Box(Modifier.size(trophySize).graphicsLayer { scaleX=scale;scaleY=scale }
-                                        .clickable(onClickLabel = "View earned trophy") { selectedId = action.id },
-                                        contentAlignment = Alignment.Center) {
-                                        TrophyImage(action.skill, Modifier.fillMaxSize(),
-                                            description = "${DailyShowcase.collection(action.skill)?.title} trophy: ${action.originalName ?: action.name}")
-                                    }
+                                TrophySlot(slot, slotFill, slotEdge, action.skill,
+                                    "${DailyShowcase.collection(action.skill)?.title} trophy: ${action.originalName ?: action.name}") {
+                                    selectedId = action.id
                                 }
                             }
+                            repeat(4 - rowItems.size) { TrophySlot(slot, slotFill, slotEdge, null, null) {} }
                         }
                     }
                 }
             }
             if(pages > 1) Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.SpaceBetween) {
-                AppTextButton(enabled=currentPage>0,onClick={page=currentPage-1}) { Text("Previous",color=Color.White) }
-                Text("Display ${currentPage+1} / $pages",color=Color.White,style=MaterialTheme.typography.labelSmall)
-                AppTextButton(enabled=currentPage<pages-1,onClick={page=currentPage+1}) { Text("Next",color=Color.White) }
+                AppTextButton(enabled=currentPage>0,onClick={page=currentPage-1}) { Text("Previous",color=colors.onSurface) }
+                Text("Display ${currentPage+1} / $pages",color=colors.onSurfaceVariant,style=MaterialTheme.typography.labelSmall)
+                AppTextButton(enabled=currentPage<pages-1,onClick={page=currentPage+1}) { Text("Next",color=colors.onSurface) }
             }
-            Text("Tap a trophy to remember the activity.", style = MaterialTheme.typography.labelSmall, color = Color(0xFFD6E2E8))
-            DailyCoinBonus.goals.forEach { goal ->
-                val done = DailyCoinBonus.claimKey(day, goal) in state.coinRewardDays
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = slotFill) {
+                Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(if (done) "✓" else "${DailyCoinBonus.progress(state, day, goal)}/${goal.categoriesRequired}",
-                        color = if (done) Color(0xFF9EDAB5) else Color(0xFFD6E2E8),
-                        style = MaterialTheme.typography.labelSmall)
-                    Text(goal.label, Modifier.weight(1f), color = Color(0xFFD6E2E8),
-                        style = MaterialTheme.typography.labelSmall,
-                        textDecoration = if (done) TextDecoration.LineThrough else TextDecoration.None)
+                    Text("Coins earned today", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                     Image(gameArtPainter(com.healersjourney.app.R.drawable.gameart_icon_coin), null, Modifier.size(18.dp))
-                    Text("+${goal.coins}", color = Color(0xFFFFE1A5), style = MaterialTheme.typography.labelSmall)
+                    Text("${DailyCoinBonus.earnedToday(state, day)}", style = MaterialTheme.typography.titleSmall, color = gold)
                 }
             }
+            DailyCoinBonus.goals.forEach { goal ->
+                val done = DailyCoinBonus.claimKey(day, goal) in state.coinRewardDays
+                val progress = DailyCoinBonus.progress(state, day, goal).toFloat() / goal.categoriesRequired
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(goal.label, Modifier.weight(1f), color = if (done) colors.tertiary else colors.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        textDecoration = if (done) TextDecoration.LineThrough else TextDecoration.None)
+                    if (done) Text("Done", color = colors.tertiary, style = MaterialTheme.typography.labelMedium)
+                    else Box(Modifier.width(56.dp).height(6.dp).clip(RoundedCornerShape(3.dp))) {
+                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxSize(),
+                            color = gold, trackColor = slotEdge)
+                    }
+                    Image(gameArtPainter(com.healersjourney.app.R.drawable.gameart_icon_coin), null, Modifier.size(16.dp))
+                    Text("+${goal.coins}", color = gold, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            Text("Tap a trophy to remember the activity.", style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
         }
+    }
+}
+
+/** A single display square: earned trophies are tappable, empty ones stay as quiet placeholders. */
+@Composable
+private fun TrophySlot(size: Dp, fill: Color, edge: Color, skill: String?, description: String?, onClick: () -> Unit) {
+    var appeared by remember(skill) { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
+    val scale by animateFloatAsState(if (appeared || skill == null) 1f else .3f, label = "Badge arrival")
+    if (skill == null) {
+        Box(Modifier.size(size).clip(RoundedCornerShape(16.dp)).border(BorderStroke(1.dp, edge), RoundedCornerShape(16.dp)))
+    } else Surface(Modifier.size(size).graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(RoundedCornerShape(16.dp)).clickable(onClickLabel = "View earned trophy", onClick = onClick),
+        shape = RoundedCornerShape(16.dp), color = fill, border = BorderStroke(1.dp, edge)) {
+        TrophyImage(skill, Modifier.padding(3.dp).fillMaxSize(), description = description)
     }
 }
