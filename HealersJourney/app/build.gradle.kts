@@ -16,8 +16,8 @@ android {
         applicationId = "com.life.rpg"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
 
         // OAuth 2.0 client ID for Google Drive sync. Replace with your own
         // Android/Web client ID from Google Cloud Console to enable sign-in.
