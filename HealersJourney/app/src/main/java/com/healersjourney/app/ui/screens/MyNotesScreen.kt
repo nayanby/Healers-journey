@@ -1,6 +1,7 @@
 package com.healersjourney.app.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,14 +12,19 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.healersjourney.app.domain.*
 import com.healersjourney.app.ui.*
 import com.healersjourney.app.ui.components.*
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 @Composable
-fun MyNotesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
+fun MyNotesScreen(snapshot: GameSnapshot, viewModel: GameViewModel,
+                  screenScroll: ScrollState, scrollViewportTopPx: Float, scrollViewportHeightPx: Float) {
     var editingDate by rememberSaveable { mutableStateOf<String?>(null) }
     var removing by remember { mutableStateOf<ThoughtEntry?>(null) }
     val state = snapshot.state
@@ -33,7 +39,23 @@ fun MyNotesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
         LaunchedEffect(day, draft) { delay(600); save() }
         DisposableEffect(day) { onDispose { save() } }
         BackHandler { save(); editingDate = null }
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        val density = LocalDensity.current
+        val keyboardOpen = WindowInsets.ime.getBottom(density) > 0
+        var editorTopInContentPx by remember { mutableIntStateOf(0) }
+        LaunchedEffect(day, keyboardOpen) {
+            if (!keyboardOpen) return@LaunchedEffect
+            withFrameNanos { }
+            screenScroll.animateScrollTo(editorTopInContentPx.coerceAtLeast(0),
+                androidx.compose.animation.core.tween(220))
+        }
+        // Halving the visible height keeps the caret line near the middle of what the keyboard leaves us.
+        val fieldMaxHeight = if (keyboardOpen)
+            minOf(560.dp, with(density) { (scrollViewportHeightPx * 0.5f).toDp() }) else 560.dp
+        val fieldMinHeight = minOf(if (keyboardOpen) 200.dp else 340.dp, fieldMaxHeight)
+        Column(Modifier.onGloballyPositioned { coordinates ->
+            editorTopInContentPx =
+                (coordinates.positionInRoot().y - scrollViewportTopPx + screenScroll.value).roundToInt()
+        }, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(Dates.prettyCareDate(day), style = MaterialTheme.typography.titleLarge)
@@ -43,7 +65,8 @@ fun MyNotesScreen(snapshot: GameSnapshot, viewModel: GameViewModel) {
                 AppTextButton(onClick = { save(); editingDate = null }) { Text("Done") }
             }
             OutlinedTextField(draft, { draft = it.take(50_000) }, placeholder = { Text("Write your notes…") },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 340.dp, max = 560.dp), shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = fieldMinHeight, max = fieldMaxHeight),
+                shape = RoundedCornerShape(20.dp),
                 textStyle = MaterialTheme.typography.bodyLarge)
         }
         return

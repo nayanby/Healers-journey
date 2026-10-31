@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -281,8 +282,12 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
             }, label = "Main screen slide") { page ->
             val screenScroll = rememberScrollState()
             var scrollViewportTopPx by remember { mutableStateOf(0f) }
-            Column(Modifier.fillMaxSize().padding(padding)
-                .onGloballyPositioned { scrollViewportTopPx = it.positionInRoot().y }
+            var scrollViewportHeightPx by remember { mutableStateOf(0f) }
+            Column(Modifier.fillMaxSize().padding(padding).imePadding()
+                .onGloballyPositioned {
+                    scrollViewportTopPx = it.positionInRoot().y
+                    scrollViewportHeightPx = it.size.height.toFloat()
+                }
                 .verticalScroll(screenScroll).padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(bottom = 20.dp)) {
@@ -307,7 +312,7 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
                         Destination.Sleep -> SleepScreen(snapshot, viewModel)
                         Destination.Hobbies -> HobbiesScreen(snapshot, viewModel)
                         Destination.Finance -> FinanceScreen(snapshot, viewModel)
-                        Destination.Notes -> MyNotesScreen(snapshot, viewModel)
+                        Destination.Notes -> MyNotesScreen(snapshot, viewModel, screenScroll, scrollViewportTopPx, scrollViewportHeightPx)
                         Destination.Todo -> TodoScreen(snapshot, viewModel, todaySkill, screenScroll, scrollViewportTopPx) { open(Destination.Sleep) }
                         Destination.Care -> CareScreen(snapshot, viewModel)
                         Destination.Milestones -> MilestonesScreen(snapshot, viewModel)
