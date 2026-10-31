@@ -13,6 +13,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.healersjourney.app.domain.*
@@ -41,6 +43,8 @@ fun DayShowcase(state: GameState, day: String, revision: Int) {
         }
         knownIds = entries.map { it.id }.toSet()
     }
+    // Display height, not window height, so the shelf does not resize when the keyboard opens.
+    val shelfHeight = with(LocalDensity.current) { LocalContext.current.resources.displayMetrics.heightPixels.toDp() * .25f }
     Surface(shape = RoundedCornerShape(24.dp), color = Color(0xFF233B4B)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -52,7 +56,7 @@ fun DayShowcase(state: GameState, day: String, revision: Int) {
                 Image(gameArtPainter(com.healersjourney.app.R.drawable.gameart_icon_coin), null, Modifier.size(22.dp))
                 Text("${DailyCoinBonus.earnedToday(state, day)}", style = MaterialTheme.typography.titleSmall, color = Color(0xFFFFE1A5))
             }
-            BoxWithConstraints(Modifier.fillMaxWidth(.82f).align(Alignment.CenterHorizontally).aspectRatio(4f/3f)) {
+            BoxWithConstraints(Modifier.fillMaxWidth(.82f).height(shelfHeight).align(Alignment.CenterHorizontally)) {
                 val w = maxWidth
                 val h = maxHeight
                 Image(gameArtPainter(com.healersjourney.app.R.drawable.gameart_trophy_shelf), null,
@@ -62,7 +66,8 @@ fun DayShowcase(state: GameState, day: String, revision: Int) {
                         var appeared by remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) { appeared = true }
                         val scale by animateFloatAsState(if(appeared) 1f else .25f, label = "Badge arrival")
-                        val itemW = w * .22f
+                        // Bounded by the box height so trophies keep their proportions on the shorter shelf.
+                        val itemW = minOf(w * .22f, h * .29f)
                         val x = w * (.20f + col*.20f) - itemW/2
                         // PNGs share the same opaque base line, resting on each shelf surface.
                         val y = h * (if(row == 0) .48f else .79f) - itemW * (496f/512f)
