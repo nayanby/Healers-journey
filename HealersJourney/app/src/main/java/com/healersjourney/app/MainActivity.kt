@@ -120,6 +120,8 @@ import com.healersjourney.app.ui.screens.TodoScreen
 import com.healersjourney.app.ui.screens.SettingsScreen
 import com.healersjourney.app.ui.screens.MyNotesScreen
 import com.healersjourney.app.ui.theme.HealersJourneyTheme
+import com.healersjourney.app.ui.theme.ThemePrefs
+import com.healersjourney.app.ui.theme.isDark
 import kotlinx.coroutines.launch
 
 enum class Destination(val label: String, val icon: ImageVector) {
@@ -156,6 +158,8 @@ class MainActivity : ComponentActivity() {
 
     private val playGames by lazy { PlayGamesConnection(this) }
 
+    private val themePrefs: ThemePrefs by lazy { (application as HealersJourneyApp).container.themePrefs }
+
     private val viewModel: GameViewModel by viewModels {
         GameViewModel.Factory((application as HealersJourneyApp).container)
     }
@@ -166,9 +170,10 @@ class MainActivity : ComponentActivity() {
             result.data?.let(viewModel::handleDriveSignInResult)
         }
         setContent {
-            HealersJourneyTheme {
+            val themeMode by themePrefs.mode.collectAsState()
+            HealersJourneyTheme(themeMode) {
                 val colors = MaterialTheme.colorScheme
-                val dark = androidx.compose.foundation.isSystemInDarkTheme()
+                val dark = themeMode.isDark()
                 androidx.compose.runtime.SideEffect {
                     window.statusBarColor = colors.background.toArgb()
                     window.navigationBarColor = colors.surface.toArgb()
@@ -179,7 +184,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val gamesState by playGames.state.collectAsState()
                 AppRoot(viewModel, onSignIn = { signIn.launch(viewModel.driveSignInIntent()) },
-                    gamesState = gamesState, onGamesSignIn = playGames::signIn)
+                    gamesState = gamesState, onGamesSignIn = playGames::signIn, themePrefs = themePrefs)
             }
         }
     }
@@ -193,7 +198,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
-            gamesState: PlayGamesUiState, onGamesSignIn: () -> Unit) {
+            gamesState: PlayGamesUiState, onGamesSignIn: () -> Unit, themePrefs: ThemePrefs) {
     val snapshot by viewModel.snapshot.collectAsState()
     val message by viewModel.message.collectAsState()
     val drive by viewModel.drive.collectAsState()
@@ -293,7 +298,7 @@ fun AppRoot(viewModel: GameViewModel, onSignIn: () -> Unit,
                         Destination.RestProgress -> DashboardScreen(snapshot, viewModel, open)
                         Destination.Character -> com.healersjourney.app.ui.screens.CharacterScreen(snapshot, viewModel)
                         Destination.More -> ExploreScreen(snapshot, viewModel, open)
-                        Destination.Settings -> SettingsScreen(snapshot, viewModel, drive, onSignIn, gamesState, onGamesSignIn)
+                        Destination.Settings -> SettingsScreen(snapshot, viewModel, drive, onSignIn, gamesState, onGamesSignIn, themePrefs)
                         Destination.Daily -> DailyScreen(snapshot, viewModel)
                         Destination.Study -> StudyScreen(snapshot, viewModel)
                         Destination.Medicine -> MedicineScreen(snapshot, viewModel)

@@ -16,6 +16,15 @@ import com.healersjourney.app.R
 
 val Averia = FontFamily(Font(R.font.averia_serif_libre))
 
+enum class ThemeMode { Dark, Light, System }
+
+@Composable
+fun ThemeMode.isDark(): Boolean = when (this) {
+    ThemeMode.Dark -> true
+    ThemeMode.Light -> false
+    ThemeMode.System -> isSystemInDarkTheme()
+}
+
 private val DarkScheme = darkColorScheme(
     primary = Color(0xFFBDB0FF), onPrimary = Color(0xFF241C4C),
     primaryContainer = Color(0xFF28364B), onPrimaryContainer = Color(0xFFEAF0F8),
@@ -77,11 +86,11 @@ private val AppTypography = Typography(
 
 @Composable
 fun HealersJourneyTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    mode: ThemeMode = ThemeMode.Dark,
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkScheme else LightScheme,
+        colorScheme = if (mode.isDark()) DarkScheme else LightScheme,
         typography = AppTypography,
         content = content
     )

@@ -26,6 +26,9 @@ import com.healersjourney.app.ui.GameViewModel
 import com.healersjourney.app.ui.DriveUiState
 import com.healersjourney.app.data.games.PlayGamesUiState
 import com.healersjourney.app.ui.components.*
+import com.healersjourney.app.ui.theme.ThemeMode
+import com.healersjourney.app.ui.theme.ThemePrefs
+import androidx.compose.ui.text.style.TextAlign
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -52,7 +55,8 @@ fun ExploreScreen(snapshot: GameSnapshot, viewModel: GameViewModel, onOpen: (Des
 
 @Composable
 fun SettingsScreen(snapshot: GameSnapshot, viewModel: GameViewModel, drive: DriveUiState, onSignIn: () -> Unit,
-                   gamesState: PlayGamesUiState, onGamesSignIn: () -> Unit) {
+                   gamesState: PlayGamesUiState, onGamesSignIn: () -> Unit, themePrefs: ThemePrefs) {
+    val themeMode by themePrefs.mode.collectAsState()
     Column(verticalArrangement = Arrangement.spacedBy(AppLayout.sectionGap)) {
         Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -72,6 +76,23 @@ fun SettingsScreen(snapshot: GameSnapshot, viewModel: GameViewModel, drive: Driv
                     }
                 }
             }
+            }
+        }
+        SectionCard(title = "Appearance") {
+            Text("Choose how Life RPG looks. Dark is the default.", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(ThemeMode.Dark to "Dark", ThemeMode.Light to "Light", ThemeMode.System to "Match system")
+                    .forEach { (mode, label) ->
+                        val selected = themeMode == mode
+                        Surface(Modifier.weight(1f).clickable { themePrefs.set(mode) },
+                            shape = RoundedCornerShape(18.dp),
+                            color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+                            Text(label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp))
+                        }
+                    }
             }
         }
         SectionCard(title = "Google Play Games") {
